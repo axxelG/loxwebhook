@@ -16,6 +16,8 @@ import (
 	"github.com/axxelG/loxwebhook/proxy"
 )
 
+var version string // Will be set on compile time
+
 func initLogging(FileName string) (*log.Logger, *os.File, error) {
 	logFormat := log.Ldate | log.Ltime | log.Lshortfile
 	if FileName == "" {
@@ -40,7 +42,7 @@ func startLetsEncryptListener(cfg *config.Config) (net.Listener, *tls.Config) {
 }
 
 func main() {
-	cfg, err := config.NewConfig()
+	cfg, err := config.NewConfig(version)
 	if err != nil {
 		log.Print(errors.Wrap(err, "Cannot read/load config"))
 		os.Exit(1)
@@ -52,6 +54,7 @@ func main() {
 	}
 	defer logFileMain.Close()
 	startMsg := fmt.Sprintf("Starting loxwebhook\n"+
+		"Version:              %s\n"+
 		"Config file:          %s\n"+
 		"Log file main:        %s\n"+
 		"Log file http errors: %s\n"+
@@ -61,6 +64,7 @@ func main() {
 		"Miniserver URL:       %s\n"+
 		"Miniserver User:      %s\n"+
 		"Miniserver Timeout:   %d seconds\n",
+		version,
 		cfg.ConfigFile,
 		cfg.LogFileMain,
 		cfg.LogFileHTTPError,

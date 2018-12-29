@@ -2,6 +2,7 @@ package config
 
 import (
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -14,6 +15,7 @@ import (
 
 // Config holds the configuration values
 type Config struct {
+	Version            string
 	ConfigFile         string
 	LogFileMain        string
 	LogFileHTTPError   string
@@ -55,7 +57,6 @@ type basicTypeConfig struct {
 func (btc *basicTypeConfig) getConfig() (*Config, error) {
 	var err error
 	cfg := new(Config)
-
 	cfg.ConfigFile = btc.ConfigFile
 	cfg.LogFileMain = btc.LogFileMain
 	cfg.LogFileHTTPError = btc.LogFileHTTPError
@@ -143,10 +144,11 @@ func newEnvConfig() (*basicTypeConfig, error) {
 	return cfg, nil
 }
 
-func newFlagConfig() *basicTypeConfig {
+func newFlagConfig(versionStr string) *basicTypeConfig {
 	// We are using a separate FlagSet to be able reassign values
 	// to os.Args in tests without getting errors.
 	flags := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+	versionFlag := flags.Bool("version", false, "Show program version")
 	config := flags.String("config", "", "Config file")
 	logFileMain := flags.String("logfilemain", "", "Log file")
 	logFileHTTPError := flags.String("logfilehttperror", "", "Log file")
@@ -160,6 +162,10 @@ func newFlagConfig() *basicTypeConfig {
 	miniserverPassword := flags.String("miniserverPassword", "", "Miniserver password")
 	miniserverTimeout := flags.Int("miniserverTimeout", 0, "Timeout for requests to the Miniserver")
 	flags.Parse(os.Args[1:])
+	if *versionFlag {
+		fmt.Printf("Version: %s", versionStr)
+		os.Exit(0)
+	}
 	cfg := newDefaultConfig()
 	if *config != "" {
 		cfg.ConfigFile = *config
@@ -293,14 +299,14 @@ func mergeConfig(cfg *basicTypeConfig, c *basicTypeConfig) {
 }
 
 // NewConfig return an initialized Config struct
-func NewConfig() (*Config, error) {
+func NewConfig(version string) (*Config, error) {
 	var err error
 	envCfg, err := newEnvConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "Error reading config from environment")
 	}
 	ConfigFile := envCfg.ConfigFile
-	flagCfg := newFlagConfig()
+	flagCfg := newFlagConfig(version)
 	if flagCfg.ConfigFile != "" {
 		ConfigFile = flagCfg.ConfigFile
 	}
@@ -308,10 +314,15 @@ func NewConfig() (*Config, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "Error reading config from file")
 	}
-	cfg := newDefaultConfig()
-	cfg.ConfigFile = usedConfigFile
-	mergeConfig(cfg, fileCfg)
-	mergeConfig(cfg, envCfg)
-	mergeConfig(cfg, flagCfg)
-	return cfg.getConfig()
+	impCfg := newDefaultConfig()
+	impCfg.ConfigFile = usedConfigFile
+	mergeConfig(impCfg, fileCfg)
+	mergeConfig(impCfg, envCfg)
+	mergeConfig(impCfg, flagCfg)
+	cfg, err := impCfg.getConfig()
+	if err != nil {
+		return cfg, err
+	}
+	cfg.Version = version
+	return cfg, nil
 }

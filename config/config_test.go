@@ -27,6 +27,7 @@ func removeEnvVars(prefix string) map[string]string {
 
 func TestNewConfig(t *testing.T) {
 	//TODO: This is a huge mess :-(
+	testingVersionNumber := "0.0.0"
 	envPrefix := "LOXWEBHOOK_"
 	defaultConfigFile := ""
 	exampleConfigFile := "../config.example.toml"
@@ -134,6 +135,7 @@ func TestNewConfig(t *testing.T) {
 				os.Args[0],
 			},
 			wantCfg: Config{
+				Version:            testingVersionNumber,
 				ConfigFile:         defaultConfigFile,
 				LogFileMain:        defaultLogFileMain,
 				LogFileHTTPError:   defaultLogFileHTTPError,
@@ -155,6 +157,7 @@ func TestNewConfig(t *testing.T) {
 				"-config", exampleConfigFile,
 			},
 			wantCfg: Config{
+				Version:            testingVersionNumber,
 				ConfigFile:         exampleConfigFile,
 				LogFileMain:        exampleLogFileMain,
 				LogFileHTTPError:   exampleLogFileHTTPError,
@@ -188,6 +191,7 @@ func TestNewConfig(t *testing.T) {
 				os.Args[0],
 			},
 			wantCfg: Config{
+				Version:            testingVersionNumber,
 				ConfigFile:         "",
 				LogFileMain:        envLogFileMain,
 				LogFileHTTPError:   envLogFileHTTPError,
@@ -211,6 +215,7 @@ func TestNewConfig(t *testing.T) {
 				os.Args[0],
 			},
 			wantCfg: Config{
+				Version:            testingVersionNumber,
 				ConfigFile:         envConfigFile,
 				LogFileMain:        envConfigFileLogFileMain,
 				LogFileHTTPError:   envConfigFileLogFileHTTPError,
@@ -243,6 +248,7 @@ func TestNewConfig(t *testing.T) {
 				"-miniserverTimeout", flagMiniserverTimeoutStr,
 			},
 			wantCfg: Config{
+				Version:            testingVersionNumber,
 				ConfigFile:         flagConfigFile,
 				LogFileMain:        flagLogFileMain,
 				LogFileHTTPError:   flagLogFileHTTPError,
@@ -264,6 +270,7 @@ func TestNewConfig(t *testing.T) {
 				"-config", flagConfigFile,
 			},
 			wantCfg: Config{
+				Version:            testingVersionNumber,
 				ConfigFile:         flagConfigFile,
 				LogFileMain:        flagConfigFileLogFileMain,
 				LogFileHTTPError:   flagConfigFileLogFileHTTPError,
@@ -285,6 +292,7 @@ func TestNewConfig(t *testing.T) {
 				"-listenport", strconv.Itoa(flagListenPort),
 			},
 			wantCfg: Config{
+				Version:            testingVersionNumber,
 				ConfigFile:         defaultConfigFile,
 				LogFileMain:        defaultLogFileMain,
 				LogFileHTTPError:   defaultLogFileHTTPError,
@@ -320,7 +328,7 @@ func TestNewConfig(t *testing.T) {
 		defer func() { os.Args = oldArgs }()
 		os.Args = tt.flags
 		t.Run(tt.name, func(t *testing.T) {
-			gotCfg, err := NewConfig()
+			gotCfg, err := NewConfig("0.0.0")
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewConfig() error = %v, wantErr %v", err, tt.wantErr)
 				return
