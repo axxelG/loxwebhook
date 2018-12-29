@@ -163,7 +163,8 @@ func newFlagConfig(versionStr string) *basicTypeConfig {
 	miniserverTimeout := flags.Int("miniserverTimeout", 0, "Timeout for requests to the Miniserver")
 	flags.Parse(os.Args[1:])
 	if *versionFlag {
-		fmt.Printf("Version: %s", versionStr)
+		fmt.Printf("Version  : %s\n", versionStr)
+		fmt.Printf("Build for: %s\n", buildForOS)
 		os.Exit(0)
 	}
 	cfg := newDefaultConfig()
@@ -206,32 +207,20 @@ func newFlagConfig(versionStr string) *basicTypeConfig {
 	return cfg
 }
 
-// readConfigFiles tries to read a config file specified by filename.
-// On success a slize of bytes containing the file content is returned.
-// If filename is empty readConfigFile tries to read all default files.
-// On success a byte string containing the content of the first file found is returned.
-// On failure an empty slize of bytes is returned. Errors are ignored.
 func readConfigFile(filename string) (name string, f []byte, err error) {
-	defaultConfigFiles := []string{
-		"/etc/loxwebhook/config.toml",
-		"./config.toml",
-	}
-	if filename != "" {
-		f, err = ioutil.ReadFile(filename)
-		if err != nil {
-			err = errors.Wrap(err, "Error reading config file")
-			return
+	if filename == "" {
+		f, err = ioutil.ReadFile(defaultConfigFile)
+		if err == nil {
+			name = defaultConfigFile
 		}
-		name = filename
+		// Ignore errors because we might get all nedded parameters
+		// from flags and/or environment variables
+		err = nil
 		return
 	}
-	for _, fn := range defaultConfigFiles {
-		f, err = ioutil.ReadFile(fn)
-		if err == nil {
-			name = fn
-			break
-		}
-		err = nil
+	f, err = ioutil.ReadFile(filename)
+	if err == nil {
+		name = filename
 	}
 	return
 }

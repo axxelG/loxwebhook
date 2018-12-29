@@ -1,0 +1,14 @@
+[Unit]
+Description=Loxwebhook
+After=network-online.target
+
+[Service]
+Type=notify
+Restart=always
+RestartSec=5s
+User=loxwebhook
+WorkingDirectory=/usr/local/bin/loxwebhook/
+ExecStart=/usr/local/bin/loxwebhook/loxwebhook
+
+[Install]
+WantedBy=multi-user.target
