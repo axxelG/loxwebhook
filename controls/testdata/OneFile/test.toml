@@ -1,0 +1,39 @@
+[Tokens]
+testOne   = "43b2c690-f281-42bb-af2d-979f5dbe9517"
+testTwo   = "69b9a1ad-1224-4c93-8411-e88e65ebe582"
+testThree = "84627dbd-bd68-476f-9e53-35522285783b"
+
+
+[Controls]
+
+    [Controls.test1]
+    Category = "dvi"
+    ID = 1
+    Allowed = [
+        "<all>",
+    ]
+    Tokens = [
+        "testOne",
+    ]
+
+    [Controls.test2]
+    Category = "dvi"
+    ID = 2
+    Allowed = [
+        "on",
+    ]
+    Tokens = [
+        "testTwo",
+    ]
+
+    [Controls.test3]
+    Category = "dvi"
+    ID = 3
+    Allowed = [
+        "on",
+        "off",
+    ]
+    Tokens = [
+        "testOne",
+        "testThree",
+    ]

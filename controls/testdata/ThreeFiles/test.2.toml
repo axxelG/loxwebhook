@@ -1,0 +1,14 @@
+[Tokens]
+testTwo   = "69b9a1ad-1224-4c93-8411-e88e65ebe582"
+
+[Controls]
+
+    [Controls.test2]
+    Category = "dvi"
+    ID = 2
+    Allowed = [
+        "on",
+    ]
+    Tokens = [
+        "testTwo",
+    ]

@@ -1,0 +1,16 @@
+[Tokens]
+testThree = "84627dbd-bd68-476f-9e53-35522285783b"
+
+[Controls]
+
+    [Controls.test3]
+    Category = "dvi"
+    ID = 3
+    Allowed = [
+        "on",
+        "off",
+    ]
+    Tokens = [
+        "testOne",
+        "testThree",
+    ]
