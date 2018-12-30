@@ -1,9 +1,9 @@
 package config
 
 import (
+	"fmt"
 	"net/url"
 	"os"
-	"path/filepath"
 	"reflect"
 	"strconv"
 	"strings"
@@ -26,98 +26,125 @@ func removeEnvVars(prefix string) map[string]string {
 }
 
 func TestNewConfig(t *testing.T) {
-	//TODO: This is a huge mess :-(
-	testingVersionNumber := "0.0.0"
+	_, err := os.Stat(defaultConfigFile)
+	if err == nil {
+		tempname := defaultConfigFile + "disabled_for_testing"
+		err = os.Rename(defaultConfigFile, tempname)
+		if err != nil {
+			t.Errorf("Error renaming config file %s to %s: %s", defaultConfigFile, tempname, err)
+			return
+		}
+		defer func() {
+			err := os.Rename(tempname, defaultConfigFile)
+			if err != nil {
+				t.Errorf("Error restoring original config file. Renaming %s to %s failed: %s", tempname, defaultConfigFile, err)
+			}
+		}()
+	}
 	envPrefix := "LOXWEBHOOK_"
-	defaultConfigFile := ""
-	exampleConfigFile := "../config.example.toml"
-	envConfigFile := filepath.Join("testdata", "config_for_tests_env.toml")
-	envConfigFileLogFileMain := "/var/log/configmain_env.log"
-	envConfigFileLogFileHTTPError := "/var/log/configerr_env.log"
-	envConfigFileLogFileHTTPAccess := "/var/log/configacc_env.log"
-	envConfigFileListenPort := 811
-	envConfigFilePublicURI := "config.env.example.com"
-	envConfigFileLetsencryptCache := "./cache/letsencrypt/config/env"
-	envConfigControlsFiles := "./controls.d/env"
-	envConfigFileMiniserverURL := &url.URL{
-		Scheme: "http",
-		Host:   "192.168.1.71:80",
+	testingVersionNumber := "0.0.0"
+
+	configDefaults := Config{
+		Version:            testingVersionNumber,
+		ConfigFile:         "",
+		PublicURI:          "",
+		ListenPort:         80,
+		MiniserverURL:      new(url.URL),
+		MiniserverUser:     "admin",
+		MiniserverPassword: "admin",
+		MiniserverTimeout:  2 * time.Second,
+		LetsEncryptCache:   "./cache/letsencrypt",
+		LogFileMain:        "",
+		LogFileHTTPError:   "",
+		LogFileHTTPAccess:  "",
+		ControlsFiles:      "./controls.d",
 	}
-	envConfigFileMiniserverUser := "envConfigFileMiniserverUser"
-	envConfigFileMiniserverPassword := "envConfigFileMiniserverPassword"
-	envConfigFileMiniserverTimeout := time.Duration(811) * time.Second
-	flagConfigFile := filepath.Join("testdata", "config_for_tests_flag.toml")
-	flagConfigFileLogFileMain := "/var/log/configmain_flag.log"
-	flagConfigFileLogFileHTTPError := "/var/log/configerr_flag.log"
-	flagConfigFileLogFileHTTPAccess := "/var/log/configacc_flag.log"
-	flagConfigFileListenPort := 822
-	flagConfigPublicURI := "config.flag.example.com"
-	flagConfigLetsencryptCache := "./cache/letsencrypt/config/flag"
-	flagConfigControlsFiles := "./controls.d/flag"
-	flagConfigFileMiniserverURL := &url.URL{
-		Scheme: "http",
-		Host:   "192.168.1.72:80",
+
+	configFileExample := Config{
+		Version:    testingVersionNumber,
+		ConfigFile: "../config.example.toml",
+		PublicURI:  "loxwebhook.example.com",
+		ListenPort: 4443,
+		MiniserverURL: &url.URL{
+			Scheme: "http",
+			Host:   "192.168.1.1:80",
+		},
+		MiniserverUser:     "loxwebhook",
+		MiniserverPassword: "YourSecretPassword",
+		MiniserverTimeout:  2 * time.Second,
+		LetsEncryptCache:   "~/.loxwebhook/cache/letsencrypt",
+		LogFileMain:        "/var/log/loxwebhook/loxwebhook.log",
+		LogFileHTTPError:   "/var/log/loxwebhook/error.log",
+		LogFileHTTPAccess:  "/var/log/loxwebhook/access.log",
+		ControlsFiles:      "/etc/loxwebhook/controls.d",
 	}
-	flagConfigFileMiniserverUser := "flagConfigFileMiniserverUser"
-	flagConfigFileMiniserverPassword := "flagConfigFileMiniserverPassword"
-	flagConfigFileMiniserverTimeout := time.Duration(822) * time.Second
-	defaultLogFileMain := ""
-	exampleLogFileMain := ""
-	defaultLogFileHTTPError := ""
-	exampleLogFileHTTPError := ""
-	defaultLogFileHTTPAccess := ""
-	exampleLogFileHTTPAccess := ""
-	envLogFileMain := filepath.Join("var", "log", "envLogFileMain.log")
-	envLogFileHTTPError := filepath.Join("var", "log", "envLogFileHTTPError.log")
-	envLogFileHTTPAccess := filepath.Join("var", "log", "envLogFileHTTPAccess.log")
-	flagLogFileMain := filepath.Join("var", "log", "flagLogFileMain.log")
-	flagLogFileHTTPError := filepath.Join("var", "log", "flagLogFileHTTPError.log")
-	flagLogFileHTTPAccess := filepath.Join("var", "log", "flagLogFileHTTPAccess.log")
-	defaultListenPort := 80
-	exampleListenPort := 80
-	envListenPort := 81
-	flagListenPort := 82
-	defaultPublicURI := ""
-	examplePublicURI := "example.example.com"
-	envPublicURI := "env.example.com"
-	flagPublicURI := "flag.example.com"
-	defaultLetsencryptCache := "./cache/letsencrypt"
-	exampleLetsencryptCache := "./cache/letsencrypt/example"
-	envLetsencryptCache := "./cache/letsencrypt/env"
-	flagLetsencryptCache := "./cache/letsencrypt/flag"
-	defaultControlsFiles := "./controls.d"
-	exampleControlsFiles := "./controls_example.d"
-	envControlsFiles := "./controls_env.d"
-	flagControlsFiles := "./controls_flag.d"
-	defaultMiniserverURL := new(url.URL)
-	exampleMiniserverURL := &url.URL{
-		Scheme: "http",
-		Host:   "192.168.1.2:80",
+
+	configEnv := Config{
+		Version:    testingVersionNumber,
+		ConfigFile: configDefaults.ConfigFile,
+		PublicURI:  "env.example.com",
+		ListenPort: 81,
+		MiniserverURL: &url.URL{
+			Scheme: "http",
+			Host:   "192.168.1.81:80",
+		},
+		MiniserverUser:     "userEnv",
+		MiniserverPassword: "env",
+		MiniserverTimeout:  81 * time.Second,
+		LetsEncryptCache:   "./cache/letsencrypt/env",
+		LogFileMain:        "/var/log/envLogFileMain.log",
+		LogFileHTTPError:   "/var/log/envLogFileHTTPError.log",
+		LogFileHTTPAccess:  "/var/log/envLogFileHTTPAccess.log",
+		ControlsFiles:      "./controls_env.d",
 	}
-	envMiniserverURLstr := "http://192.168.1.81:80"
-	envMiniserverURL := &url.URL{
-		Scheme: "http",
-		Host:   "192.168.1.81:80",
+
+	allEnv := map[string]string{
+		"LOGFILEMAIN":        configEnv.LogFileMain,
+		"LOGFILEHTTPERROR":   configEnv.LogFileHTTPError,
+		"LOGFILEHTTPACCESS":  configEnv.LogFileHTTPAccess,
+		"LISTENPORT":         strconv.Itoa(configEnv.ListenPort),
+		"PUBLICURI":          configEnv.PublicURI,
+		"LETSENCRYPTCACHE":   configEnv.LetsEncryptCache,
+		"CONTROLSFILES":      configEnv.ControlsFiles,
+		"MINISERVERURL":      configEnv.MiniserverURL.String(),
+		"MINISERVERUSER":     configEnv.MiniserverUser,
+		"MINISERVERPASSWORD": configEnv.MiniserverPassword,
+		"MINISERVERTIMEOUT":  fmt.Sprint(configEnv.MiniserverTimeout.Seconds()),
 	}
-	flagMiniserverURLstr := "http://192.168.1.82:80"
-	flagMiniserverURL := &url.URL{
-		Scheme: "http",
-		Host:   "192.168.1.82:80",
+
+	configFlag := Config{
+		Version:    testingVersionNumber,
+		ConfigFile: configDefaults.ConfigFile,
+		PublicURI:  "flag.example.com",
+		ListenPort: 82,
+		MiniserverURL: &url.URL{
+			Scheme: "http",
+			Host:   "192.168.1.82:80",
+		},
+		MiniserverUser:     "userFlag",
+		MiniserverPassword: "flag",
+		MiniserverTimeout:  82 * time.Second,
+		LetsEncryptCache:   "./cache/letsencrypt/flag",
+		LogFileMain:        "/var/log/flagLogFileMain.log",
+		LogFileHTTPError:   "/var/log/flagLogFileHTTPError.log",
+		LogFileHTTPAccess:  "/var/log/flagLogFileHTTPAccess.log",
+		ControlsFiles:      "./controls_flag.d",
 	}
-	defaultMiniserverUser := "admin"
-	exampleMiniserverUser := "user"
-	envMiniserverUser := "userEnv"
-	flagMiniserverUser := "userEnv"
-	defaultMiniserverPassword := "admin"
-	exampleMiniserverPassword := "SecretPassword"
-	envMiniserverPassword := "env"
-	flagMiniserverPassword := "flag"
-	defaultMiniserverTimeout := 2 * time.Second
-	exampleMiniserverTimeout := 2 * time.Second
-	envMiniserverTimeoutStr := "81"
-	envMiniserverTimeout := 81 * time.Second
-	flagMiniserverTimeoutStr := "82"
-	flagMiniserverTimeout := 82 * time.Second
+
+	allFlags := []string{
+		os.Args[0],
+		"-logfilemain", configFlag.LogFileMain,
+		"-logfilehttperror", configFlag.LogFileHTTPError,
+		"-logfilehttpaccess", configFlag.LogFileHTTPAccess,
+		"-listenport", strconv.Itoa(configFlag.ListenPort),
+		"-publicURI", configFlag.PublicURI,
+		"-letsencryptCache", configFlag.LetsEncryptCache,
+		"-controlsfiles", configFlag.ControlsFiles,
+		"-miniserverURL", configFlag.MiniserverURL.String(),
+		"-miniserverUser", configFlag.MiniserverUser,
+		"-miniserverPassword", configFlag.MiniserverPassword,
+		"-miniserverTimeout", fmt.Sprint(configFlag.MiniserverTimeout.Seconds()),
+	}
 	type args struct {
 		configFile *string
 	}
@@ -134,177 +161,69 @@ func TestNewConfig(t *testing.T) {
 			flags: []string{
 				os.Args[0],
 			},
-			wantCfg: Config{
-				Version:            testingVersionNumber,
-				ConfigFile:         defaultConfigFile,
-				LogFileMain:        defaultLogFileMain,
-				LogFileHTTPError:   defaultLogFileHTTPError,
-				LogFileHTTPAccess:  defaultLogFileHTTPAccess,
-				ListenPort:         defaultListenPort,
-				PublicURI:          defaultPublicURI,
-				LetsEncryptCache:   defaultLetsencryptCache,
-				ControlsFiles:      defaultControlsFiles,
-				MiniserverURL:      defaultMiniserverURL,
-				MiniserverUser:     defaultMiniserverUser,
-				MiniserverPassword: defaultMiniserverPassword,
-				MiniserverTimeout:  defaultMiniserverTimeout,
-			},
-		},
-		{
-			name: "exampleConfig",
-			flags: []string{
-				os.Args[0],
-				"-config", exampleConfigFile,
-			},
-			wantCfg: Config{
-				Version:            testingVersionNumber,
-				ConfigFile:         exampleConfigFile,
-				LogFileMain:        exampleLogFileMain,
-				LogFileHTTPError:   exampleLogFileHTTPError,
-				LogFileHTTPAccess:  exampleLogFileHTTPAccess,
-				ListenPort:         exampleListenPort,
-				PublicURI:          examplePublicURI,
-				LetsEncryptCache:   exampleLetsencryptCache,
-				ControlsFiles:      exampleControlsFiles,
-				MiniserverURL:      exampleMiniserverURL,
-				MiniserverUser:     exampleMiniserverUser,
-				MiniserverPassword: exampleMiniserverPassword,
-				MiniserverTimeout:  exampleMiniserverTimeout,
-			},
+			wantCfg: configDefaults,
 		},
 		{
 			name: "allEnv",
+			env:  allEnv,
+			flags: []string{
+				os.Args[0],
+			},
+			wantCfg: configEnv,
+		},
+		{
+			name:    "allFlags",
+			flags:   allFlags,
+			wantCfg: configFlag,
+		},
+		{
+			name: "EnvConfigFile",
+			flags: []string{
+				os.Args[0],
+				"-config", configFileExample.ConfigFile,
+			},
+			wantCfg: configFileExample,
+		},
+		{
+			name: "FlagConfigFile",
 			env: map[string]string{
-				"LOGFILEMAIN":        envLogFileMain,
-				"LOGFILEHTTPERROR":   envLogFileHTTPError,
-				"LOGFILEHTTPACCESS":  envLogFileHTTPAccess,
-				"LISTENPORT":         strconv.Itoa(envListenPort),
-				"PUBLICURI":          envPublicURI,
-				"LETSENCRYPTCACHE":   envLetsencryptCache,
-				"CONTROLSFILES":      envControlsFiles,
-				"MINISERVERURL":      envMiniserverURLstr,
-				"MINISERVERUSER":     envMiniserverUser,
-				"MINISERVERPASSWORD": envMiniserverPassword,
-				"MINISERVERTIMEOUT":  envMiniserverTimeoutStr,
+				"CONFIG": configFileExample.ConfigFile,
 			},
 			flags: []string{
 				os.Args[0],
 			},
-			wantCfg: Config{
-				Version:            testingVersionNumber,
-				ConfigFile:         "",
-				LogFileMain:        envLogFileMain,
-				LogFileHTTPError:   envLogFileHTTPError,
-				LogFileHTTPAccess:  envLogFileHTTPAccess,
-				ListenPort:         envListenPort,
-				PublicURI:          envPublicURI,
-				LetsEncryptCache:   envLetsencryptCache,
-				ControlsFiles:      envControlsFiles,
-				MiniserverURL:      envMiniserverURL,
-				MiniserverUser:     envMiniserverUser,
-				MiniserverPassword: envMiniserverPassword,
-				MiniserverTimeout:  envMiniserverTimeout,
-			},
+			wantCfg: configFileExample,
 		},
 		{
-			name: "envConfigFile",
+			name:    "FlagsOverwriteEnv",
+			env:     allEnv,
+			flags:   allFlags,
+			wantCfg: configFlag,
+		},
+		{
+			name: "EnvAndFlagOverwriteFile",
 			env: map[string]string{
-				"CONFIG": envConfigFile,
+				"CONFIG":     configFileExample.ConfigFile,
+				"LISTENPORT": strconv.Itoa(configEnv.ListenPort),
 			},
 			flags: []string{
 				os.Args[0],
+				"-publicURI", configFlag.PublicURI,
 			},
 			wantCfg: Config{
 				Version:            testingVersionNumber,
-				ConfigFile:         envConfigFile,
-				LogFileMain:        envConfigFileLogFileMain,
-				LogFileHTTPError:   envConfigFileLogFileHTTPError,
-				LogFileHTTPAccess:  envConfigFileLogFileHTTPAccess,
-				ListenPort:         envConfigFileListenPort,
-				PublicURI:          envConfigFilePublicURI,
-				LetsEncryptCache:   envConfigFileLetsencryptCache,
-				ControlsFiles:      envConfigControlsFiles,
-				MiniserverURL:      envConfigFileMiniserverURL,
-				MiniserverUser:     envConfigFileMiniserverUser,
-				MiniserverPassword: envConfigFileMiniserverPassword,
-				MiniserverTimeout:  envConfigFileMiniserverTimeout,
-			},
-		},
-		{
-			name: "allFlags",
-			flags: []string{
-				os.Args[0],
-				"-config", flagConfigFile,
-				"-logfilemain", flagLogFileMain,
-				"-logfilehttperror", flagLogFileHTTPError,
-				"-logfilehttpaccess", flagLogFileHTTPAccess,
-				"-listenport", strconv.Itoa(flagListenPort),
-				"-publicURI", flagPublicURI,
-				"-letsencryptCache", flagLetsencryptCache,
-				"-controlsfiles", flagControlsFiles,
-				"-miniserverURL", flagMiniserverURLstr,
-				"-miniserverUser", flagMiniserverUser,
-				"-miniserverPassword", flagMiniserverPassword,
-				"-miniserverTimeout", flagMiniserverTimeoutStr,
-			},
-			wantCfg: Config{
-				Version:            testingVersionNumber,
-				ConfigFile:         flagConfigFile,
-				LogFileMain:        flagLogFileMain,
-				LogFileHTTPError:   flagLogFileHTTPError,
-				LogFileHTTPAccess:  flagLogFileHTTPAccess,
-				ListenPort:         flagListenPort,
-				PublicURI:          flagPublicURI,
-				LetsEncryptCache:   flagLetsencryptCache,
-				ControlsFiles:      flagControlsFiles,
-				MiniserverURL:      flagMiniserverURL,
-				MiniserverUser:     flagMiniserverUser,
-				MiniserverPassword: flagMiniserverPassword,
-				MiniserverTimeout:  flagMiniserverTimeout,
-			},
-		},
-		{
-			name: "flagConfigFile",
-			flags: []string{
-				os.Args[0],
-				"-config", flagConfigFile,
-			},
-			wantCfg: Config{
-				Version:            testingVersionNumber,
-				ConfigFile:         flagConfigFile,
-				LogFileMain:        flagConfigFileLogFileMain,
-				LogFileHTTPError:   flagConfigFileLogFileHTTPError,
-				LogFileHTTPAccess:  flagConfigFileLogFileHTTPAccess,
-				ListenPort:         flagConfigFileListenPort,
-				PublicURI:          flagConfigPublicURI,
-				LetsEncryptCache:   flagConfigLetsencryptCache,
-				ControlsFiles:      flagConfigControlsFiles,
-				MiniserverURL:      flagConfigFileMiniserverURL,
-				MiniserverUser:     flagConfigFileMiniserverUser,
-				MiniserverPassword: flagConfigFileMiniserverPassword,
-				MiniserverTimeout:  flagConfigFileMiniserverTimeout,
-			},
-		},
-		{
-			name: "flagAndDefault",
-			flags: []string{
-				os.Args[0],
-				"-listenport", strconv.Itoa(flagListenPort),
-			},
-			wantCfg: Config{
-				Version:            testingVersionNumber,
-				ConfigFile:         defaultConfigFile,
-				LogFileMain:        defaultLogFileMain,
-				LogFileHTTPError:   defaultLogFileHTTPError,
-				LogFileHTTPAccess:  defaultLogFileHTTPAccess,
-				ListenPort:         flagListenPort,
-				PublicURI:          defaultPublicURI,
-				LetsEncryptCache:   defaultLetsencryptCache,
-				ControlsFiles:      defaultControlsFiles,
-				MiniserverURL:      defaultMiniserverURL,
-				MiniserverUser:     defaultMiniserverUser,
-				MiniserverPassword: defaultMiniserverPassword,
-				MiniserverTimeout:  defaultMiniserverTimeout,
+				ConfigFile:         configFileExample.ConfigFile,
+				ListenPort:         configEnv.ListenPort,
+				PublicURI:          configFlag.PublicURI,
+				MiniserverURL:      configFileExample.MiniserverURL,
+				MiniserverUser:     configFileExample.MiniserverUser,
+				MiniserverPassword: configFileExample.MiniserverPassword,
+				MiniserverTimeout:  configFileExample.MiniserverTimeout,
+				LetsEncryptCache:   configFileExample.LetsEncryptCache,
+				LogFileMain:        configFileExample.LogFileMain,
+				LogFileHTTPError:   configFileExample.LogFileHTTPError,
+				LogFileHTTPAccess:  configFileExample.LogFileHTTPAccess,
+				ControlsFiles:      configFileExample.ControlsFiles,
 			},
 		},
 	}
