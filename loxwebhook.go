@@ -77,7 +77,7 @@ func main() {
 	)
 	loggerMain.Println(startMsg)
 
-	tokens, controls, err := controls.Read("./controls.d")
+	tokens, controls, err := controls.Read(cfg.ControlsFiles)
 	if err != nil {
 		log.Print(errors.Wrap(err, "Error importing controls"))
 		os.Exit(1)
