@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -203,7 +204,14 @@ func StartServer(listener net.Listener, tlsConfig *tls.Config, cfg *config.Confi
 		}
 		resp, err := sendRequest(cfg, vi.GetPath())
 		if err != nil {
-			sendErrorPage(loggerErr, w, err, resp.StatusCode)
+			code := http.StatusBadGateway
+			if e, ok := err.(*url.Error); ok {
+				if e.Timeout() {
+					code = http.StatusGatewayTimeout
+				}
+			}
+			sendErrorPage(loggerErr, w, err, code)
+			return
 		}
 		forwardResponse(resp, w)
 	}
