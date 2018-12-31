@@ -100,14 +100,14 @@ func (c *Control) Validate() ControlError {
 }
 
 // Read imports all *.toml files from dir (including subdirectories) and returns
-// tokens and controlls
+// tokens and controls
 func Read(dir string) (map[string]string, map[string]Control, error) {
 	var files []string
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if filepath.Ext(path) == ".toml" {
 			files = append(files, path)
 		}
-		return err
+		return nil
 	})
 	if err != nil {
 		return nil, nil, err

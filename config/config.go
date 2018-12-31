@@ -4,9 +4,14 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"net"
+	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
+	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/BurntSushi/toml"
@@ -28,6 +33,128 @@ type Config struct {
 	MiniserverUser     string
 	MiniserverPassword string
 	MiniserverTimeout  time.Duration
+}
+
+// String returns a multiline String to print Config.
+func (c *Config) String() string {
+	return fmt.Sprintf(
+		"Version:              %s\n"+
+			"Config file:          %s\n"+
+			"Log file main:        %s\n"+
+			"Log file http errors: %s\n"+
+			"Log file http access: %s\n"+
+			"Listen Port:          %d\n"+
+			"Public URI:           %s\n"+
+			"LetsEncrypt Cache:    %s\n"+
+			"Configs Directory:    %s\n"+
+			"Miniserver URL:       %s\n"+
+			"Miniserver User:      %s\n"+
+			"Miniserver Timeout:   %d seconds\n",
+		c.Version,
+		c.ConfigFile,
+		c.LogFileMain,
+		c.LogFileHTTPError,
+		c.LogFileHTTPAccess,
+		c.ListenPort,
+		c.PublicURI,
+		c.LetsEncryptCache,
+		c.ControlsFiles,
+		c.MiniserverURL,
+		c.MiniserverUser,
+		int64(c.MiniserverTimeout.Seconds()),
+	)
+}
+
+func (c *Config) checkFile(fn, description string) error {
+	if fn == "" {
+		return nil
+	}
+	_, err := os.Stat(fn)
+	if err != nil {
+		return errors.Wrap(err, "Error testing access to "+description)
+	}
+	return nil
+}
+
+func (c *Config) tomlCount(dir string) error {
+	counter := 0
+	deadline := time.Now().Add(2 * time.Second)
+	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if filepath.Ext(path) == ".toml" {
+			counter++
+		}
+		if time.Now().After(deadline) {
+			return errors.New("Searching for control files took too long. Maybe you provided a huge directory structure as control files path")
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	if counter == 0 {
+		return errors.New("No toml file found in controls dir")
+	}
+	return nil
+}
+
+func (c *Config) checkHostname(h string) error {
+	// Regex copied from https://socketloop.com/tutorials/golang-validate-hostname
+	re, _ := regexp.Compile(`^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$`)
+	if !re.MatchString(h) {
+		if strings.HasPrefix(strings.ToLower(h), "http://") || strings.HasPrefix(strings.ToLower(h), "https://") {
+			return errors.New("Public URI must not start with http:// or https://")
+		}
+		return errors.New("Invalid public URI " + h)
+	}
+	return nil
+}
+
+func (c *Config) reachMiniserver(address *url.URL) error {
+	testEndpoint := address
+	testEndpoint.Path = "/jdev/cfg/api"
+	client := http.Client{
+		Timeout: c.MiniserverTimeout,
+	}
+	resp, err := client.Get(testEndpoint.String())
+	if err != nil {
+		return errors.Wrap(err, "Cannot reach miniserver")
+	}
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("Miniserver responded with status code %d", resp.StatusCode)
+	}
+	resp.Body.Close()
+	return nil
+}
+
+// Validate returns an error if the validation of config values failed
+func (c *Config) Validate() error {
+	if err := c.checkFile(c.ConfigFile, "config file"); err != nil {
+		return err
+	}
+	if c.ListenPort < 1 {
+		return errors.New("ListenPort must be >= 1")
+	}
+	if c.ListenPort >= 65535 {
+		// We are using port 65535 as default value for the listenport flag.
+		return errors.New("ListenPort must be < 65535")
+	}
+	if err := c.checkHostname(c.PublicURI); err != nil {
+		return err
+	}
+	if _, err := net.LookupIP(c.PublicURI); err != nil {
+		return errors.Wrap(err, "Error looking up public URI")
+	}
+	if err := c.checkFile(c.ControlsFiles, "control files dir"); err != nil {
+		return err
+	}
+	if err := c.tomlCount(c.ControlsFiles); err != nil {
+		return err
+	}
+	if err := c.reachMiniserver(c.MiniserverURL); err != nil {
+		return err
+	}
+	//TODO: Validate username and password
+	return nil
 }
 
 // GetListenPort return a string usable by http.ListenAndServe
@@ -147,6 +274,9 @@ func newEnvConfig() (*basicTypeConfig, error) {
 func newFlagConfig(versionStr string) *basicTypeConfig {
 	// We are using a separate FlagSet to be able reassign values
 	// to os.Args in tests without getting errors.
+	//TODO: Better flag handling
+	// - make flags case insensitive
+	// - enable short flags (-v)
 	flags := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	versionFlag := flags.Bool("version", false, "Show program version")
 	config := flags.String("config", "", "Config file")
@@ -154,7 +284,7 @@ func newFlagConfig(versionStr string) *basicTypeConfig {
 	logFileHTTPError := flags.String("logfilehttperror", "", "Log file")
 	logFileHTTPAccess := flags.String("logfilehttpaccess", "", "Log file")
 	controlsFiles := flags.String("controlsfiles", "", "Directory containing controls files")
-	listenPort := flags.Int("listenport", 0, "Port to listen on")
+	listenPort := flags.Int("listenport", 65535, "Port to listen on")
 	publicURI := flags.String("publicURI", "", "URI where this service is reachable like myhome.example.com")
 	letsencryptCache := flags.String("letsencryptCache", "", "Folder where letsencrypt can store cached data")
 	miniserverURL := flags.String("miniserverURL", "", "Miniserver URL like http://192.168.1.2:80")
@@ -183,7 +313,7 @@ func newFlagConfig(versionStr string) *basicTypeConfig {
 	if *controlsFiles != "" {
 		cfg.ControlsFiles = *controlsFiles
 	}
-	if *listenPort != 0 {
+	if *listenPort != 65535 {
 		cfg.ListenPort = *listenPort
 	}
 	if *publicURI != "" {
@@ -313,5 +443,9 @@ func NewConfig(version string) (*Config, error) {
 		return cfg, err
 	}
 	cfg.Version = version
+	err = cfg.Validate()
+	if err != nil {
+		return cfg, errors.Wrap(err, "Error validating config")
+	}
 	return cfg, nil
 }

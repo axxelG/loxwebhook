@@ -2,7 +2,6 @@ package main
 
 import (
 	"crypto/tls"
-	"fmt"
 	"log"
 	"net"
 	"os"
@@ -53,29 +52,9 @@ func main() {
 		os.Exit(1)
 	}
 	defer logFileMain.Close()
-	startMsg := fmt.Sprintf("Starting loxwebhook\n"+
-		"Version:              %s\n"+
-		"Config file:          %s\n"+
-		"Log file main:        %s\n"+
-		"Log file http errors: %s\n"+
-		"Log file http access: %s\n"+
-		"Listen Port:          %d\n"+
-		"Configs Directory:    %s\n"+
-		"Miniserver URL:       %s\n"+
-		"Miniserver User:      %s\n"+
-		"Miniserver Timeout:   %d seconds\n",
-		version,
-		cfg.ConfigFile,
-		cfg.LogFileMain,
-		cfg.LogFileHTTPError,
-		cfg.LogFileHTTPAccess,
-		cfg.ListenPort,
-		cfg.ControlsFiles,
-		cfg.MiniserverURL,
-		cfg.MiniserverUser,
-		int64(cfg.MiniserverTimeout.Seconds()),
-	)
-	loggerMain.Println(startMsg)
+
+	loggerMain.Println("Starting loxwebhook")
+	loggerMain.Print(cfg.String())
 
 	tokens, controls, err := controls.Read(cfg.ControlsFiles)
 	if err != nil {
@@ -89,12 +68,14 @@ func main() {
 		os.Exit(1)
 	}
 	defer logFileHTTPErrors.Close()
+
 	LoggerHTTPAccess, LogFileHTTPAccess, err := initLogging(cfg.LogFileHTTPAccess)
 	if err != nil {
 		log.Print(errors.Wrap(err, "Cannot write logfile http access"))
 		os.Exit(1)
 	}
 	defer LogFileHTTPAccess.Close()
+
 	listener, tlsConfig := startLetsEncryptListener(cfg)
 	daemon.SdNotify(false, daemon.SdNotifyReady)
 	err = proxy.StartServer(listener, tlsConfig, cfg, LoggerHTTPErrors, LoggerHTTPAccess, tokens, controls)
