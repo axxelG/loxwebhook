@@ -31,8 +31,8 @@ Loxwebhook runs on a seperate server (a very low level device like a Raspberry P
 - [x] Rate limiting
 - [x] Run as systemd service
 - [ ] Run as Windows service
-- [ ] Provide binaries for Raspberry
-- [ ] Provide binaries for x86 Linux
-- [ ] Provide binaries for Windows
-- [ ] Provide .deb packages for Raspian
+- [x] Provide binaries for Raspberry
+- [x] Provide binaries for x86 Linux
+- [x] Provide binaries for Windows
+- [x] Provide .deb packages for Raspian
 - [ ] Encrypt Miniserver Communication and get rid of basic auth
