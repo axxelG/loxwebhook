@@ -38,9 +38,8 @@ nfpm:
   bindir: "/usr/local/bin/loxwebhook/"
   config_files:
     "./config.example.toml": "/etc/loxwebhook/config.toml"
-  empty_folders:
-    - "/etc/loxwebhook/controls.d"
   files:
+    "./controls.d/example.toml.disabled": "/etc/loxwebhook/controls.d/example.toml.disabled"
     "./install/systemd_loxwebhook.service": "/etc/systemd/system/loxwebhook.service"
   scripts:
     preinstall: "./install/deb_preinstall.sh"

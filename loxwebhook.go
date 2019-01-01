@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/tls"
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -53,34 +54,41 @@ func main() {
 	}
 	defer logFileMain.Close()
 
+	loggerMain.Println()
 	loggerMain.Println("Starting loxwebhook")
+	loggerMain.Println("====================")
 	loggerMain.Print(cfg.String())
+	loggerMain.Println("====================")
+	logErrAndExit := func(err error) {
+		loggerMain.Print(err)
+		fmt.Printf("An error occured. See %s for details.\n", cfg.LogFileMain)
+		os.Exit(1)
+	}
 
 	tokens, controls, err := controls.Read(cfg.ControlsFiles)
 	if err != nil {
-		log.Print(errors.Wrap(err, "Error importing controls"))
-		os.Exit(1)
+		logErrAndExit(errors.Wrap(err, "Error importing controls"))
 	}
 
 	LoggerHTTPErrors, logFileHTTPErrors, err := initLogging(cfg.LogFileHTTPError)
 	if err != nil {
-		log.Print(errors.Wrap(err, "Cannot write logfile http errors"))
-		os.Exit(1)
+		logErrAndExit(errors.Wrap(err, "Cannot write logfile http errors"))
 	}
 	defer logFileHTTPErrors.Close()
 
 	LoggerHTTPAccess, LogFileHTTPAccess, err := initLogging(cfg.LogFileHTTPAccess)
 	if err != nil {
-		log.Print(errors.Wrap(err, "Cannot write logfile http access"))
-		os.Exit(1)
+		logErrAndExit(errors.Wrap(err, "Cannot write logfile http access"))
 	}
 	defer LogFileHTTPAccess.Close()
 
 	listener, tlsConfig := startLetsEncryptListener(cfg)
 	daemon.SdNotify(false, daemon.SdNotifyReady)
+	loggerMain.Println("Listener started")
+	loggerMain.Println("====================")
 	err = proxy.StartServer(listener, tlsConfig, cfg, LoggerHTTPErrors, LoggerHTTPAccess, tokens, controls)
 	if err != nil {
-		log.Print(errors.Wrap(err, "Error starting server"))
+		logErrAndExit(errors.Wrap(err, "Error starting server"))
 		os.Exit(1)
 	}
 }

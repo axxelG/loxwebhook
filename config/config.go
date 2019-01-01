@@ -38,7 +38,8 @@ type Config struct {
 // String returns a multiline String to print Config.
 func (c *Config) String() string {
 	return fmt.Sprintf(
-		"Version:              %s\n"+
+		"Config:\n"+
+			"Version:              %s\n"+
 			"Config file:          %s\n"+
 			"Log file main:        %s\n"+
 			"Log file http errors: %s\n"+
