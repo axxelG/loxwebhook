@@ -29,9 +29,7 @@ func (vi *digitalVirtualInput) setCommand(command string) (err error) {
 	}
 	cmd, ok := validCommands[strings.ToLower(command)]
 	if !ok {
-		return &commandError{
-			err: "Unknown command for digital virtual input: " + command,
-		}
+		return fmt.Errorf("Unknown command for digital virtual input: %s", command)
 	}
 	vi.Command = cmd
 	return nil
@@ -51,20 +49,24 @@ func (vi *digitalVirtualInput) GetPath() string {
 	return ep
 }
 
-// newDigitalVirtualInput returns a DigitalVitualEndpoint with data parsed from req
-func newDigitalVirtualInput(req *http.Request) (*digitalVirtualInput, error) {
-	var err error
+func newDigitalVirtualInput(id int, command, token string) (*digitalVirtualInput, error) {
 	vi := new(digitalVirtualInput)
-	vi.ID, err = strconv.Atoi(mux.Vars(req)["id"])
-	if err != nil {
-		return nil, &controlError{
-			err: errors.Wrap(err, "Error casting virtual input ID to integer").Error(),
-		}
-	}
-	err = vi.setCommand(mux.Vars(req)["command"])
+	err := vi.setCommand(command)
 	if err != nil {
 		return vi, err
 	}
-	vi.Token = req.URL.Query().Get("t")
+	vi.Token = token
 	return vi, nil
+}
+
+// newDigitalVirtualInput returns a DigitalVitualEndpoint with data parsed from req
+func parseRequestDigitalVirtualInput(req *http.Request) (ID int, command, token string, err error) {
+	ID, err = strconv.Atoi(mux.Vars(req)["id"])
+	if err != nil {
+		err = errors.Wrap(err, "Error casting virtual input ID to integer")
+		return
+	}
+	command = mux.Vars(req)["command"]
+	token = req.URL.Query().Get("t")
+	return
 }

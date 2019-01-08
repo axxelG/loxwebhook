@@ -33,10 +33,6 @@ type commandError struct {
 	err string
 }
 
-func (e *commandError) Error() string {
-	return e.err
-}
-
 type controlError struct {
 	err string
 }
@@ -172,13 +168,13 @@ func StartServer(listener net.Listener, tlsConfig *tls.Config, cfg *config.Confi
 	}
 
 	DigitalVirtualInputHandler := func(w http.ResponseWriter, req *http.Request) {
-		vi, err := newDigitalVirtualInput(req)
+		ID, command, token, err := parseRequestDigitalVirtualInput(req)
 		if err != nil {
-			if err, ok := err.(*commandError); ok {
-				sendErrorPage(loggerErr, w, err, http.StatusNotFound)
-				return
-			}
-			sendErrorPage(loggerErr, w, err, http.StatusBadRequest)
+			sendErrorPage(loggerErr, w, err, http.StatusNotFound)
+		}
+		vi, err := newDigitalVirtualInput(ID, command, token)
+		if err != nil {
+			sendErrorPage(loggerErr, w, err, http.StatusNotFound)
 			return
 		}
 		validControls := getValidControls(controls)

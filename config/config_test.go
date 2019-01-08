@@ -72,7 +72,7 @@ func TestNewConfig(t *testing.T) {
 		MiniserverUser:     "loxwebhook",
 		MiniserverPassword: "YourSecretPassword",
 		MiniserverTimeout:  2 * time.Second,
-		LetsEncryptCache:   "~/.loxwebhook/cache/letsencrypt",
+		LetsEncryptCache:   "/home/loxwebhook/loxwebhook/cache/letsencrypt",
 		LogFileMain:        "/var/log/loxwebhook/loxwebhook.log",
 		LogFileHTTPError:   "/var/log/loxwebhook/error.log",
 		LogFileHTTPAccess:  "/var/log/loxwebhook/access.log",
