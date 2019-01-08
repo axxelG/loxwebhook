@@ -47,6 +47,11 @@ func main() {
 		log.Print(errors.Wrap(err, "Cannot read/load config"))
 		os.Exit(1)
 	}
+	err = cfg.Validate()
+	if err != nil {
+		log.Print(errors.Wrap(err, "Error validating config"))
+		os.Exit(1)
+	}
 	loggerMain, logFileMain, err := initLogging(cfg.LogFileMain)
 	if err != nil {
 		log.Print(errors.Wrap(err, "Cannot write logfile"))

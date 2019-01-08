@@ -132,6 +132,12 @@ func (c *Config) Validate() error {
 	if err := c.checkFile(c.ConfigFile, "config file"); err != nil {
 		return err
 	}
+	if err := c.checkFile(c.ControlsFiles, "control files dir"); err != nil {
+		return err
+	}
+	if err := c.tomlCount(c.ControlsFiles); err != nil {
+		return err
+	}
 	if c.ListenPort < 1 {
 		return errors.New("ListenPort must be >= 1")
 	}
@@ -144,12 +150,6 @@ func (c *Config) Validate() error {
 	}
 	if _, err := net.LookupIP(c.PublicURI); err != nil {
 		return errors.Wrap(err, "Error looking up public URI")
-	}
-	if err := c.checkFile(c.ControlsFiles, "control files dir"); err != nil {
-		return err
-	}
-	if err := c.tomlCount(c.ControlsFiles); err != nil {
-		return err
 	}
 	if err := c.reachMiniserver(c.MiniserverURL); err != nil {
 		return err
@@ -444,9 +444,5 @@ func NewConfig(version string) (*Config, error) {
 		return cfg, err
 	}
 	cfg.Version = version
-	err = cfg.Validate()
-	if err != nil {
-		return cfg, errors.Wrap(err, "Error validating config")
-	}
 	return cfg, nil
 }
