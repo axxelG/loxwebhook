@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/BurntSushi/toml"
@@ -16,11 +17,16 @@ type controlImport struct {
 }
 
 func (ci controlImport) Validate() ControlError {
-	for _, c := range ci.Controls {
+	validName := regexp.MustCompile(`^[0-9a-zA-z_-]+$`)
+	for name, c := range ci.Controls {
+		if !validName.MatchString(name) {
+			return newInvalidControlNameError(name)
+		}
 		err := c.Validate()
 		if err != nil {
 			return err
 		}
+		// Check if token configured in this control exists
 		for _, c := range ci.Controls {
 			for _, t := range c.Tokens {
 				if _, ok := ci.Tokens[t]; !ok {
@@ -40,7 +46,7 @@ type Control struct {
 	Tokens   []string
 }
 
-func (c *Control) validateAllowedDvi() ControlError {
+func (c *Control) validateAllowedCommandsDvi() ControlError {
 	// Loxone documentation for allowed commands: https://www.loxone.com/enen/kb/web-services/
 	for _, command := range c.Allowed {
 		switch strings.ToLower(command) {
@@ -89,7 +95,7 @@ func (c *Control) Validate() ControlError {
 	switch c.Category {
 	case
 		"dvi":
-		if err := c.validateAllowedDvi(); err != nil {
+		if err := c.validateAllowedCommandsDvi(); err != nil {
 			return err
 		}
 	default:

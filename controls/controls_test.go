@@ -197,6 +197,90 @@ func Test_controlImport_Validate(t *testing.T) {
 		want ControlError
 	}{
 		{
+			name: "ValidName",
+			ci: controlImport{
+				Tokens: map[string]string{
+					"ValidToken": "325ce159-0ddf-433a-966f-a94b313a7eb5",
+				},
+				Controls: map[string]Control{
+					"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-": {
+						Category: "dvi",
+						ID:       1,
+						Allowed: []string{
+							"<all>",
+						},
+						Tokens: []string{
+							"ValidToken",
+						},
+					},
+				},
+			},
+			want: nil,
+		},
+		{
+			name: "InvalidNameSpace",
+			ci: controlImport{
+				Tokens: map[string]string{
+					"ValidToken": "325ce159-0ddf-433a-966f-a94b313a7eb5",
+				},
+				Controls: map[string]Control{
+					"No spaces please": {
+						Category: "dvi",
+						ID:       1,
+						Allowed: []string{
+							"<all>",
+						},
+						Tokens: []string{
+							"ValidToken",
+						},
+					},
+				},
+			},
+			want: newInvalidControlNameError("No spaces please"),
+		},
+		{
+			name: "InvalidNamePlus",
+			ci: controlImport{
+				Tokens: map[string]string{
+					"ValidToken": "325ce159-0ddf-433a-966f-a94b313a7eb5",
+				},
+				Controls: map[string]Control{
+					"No+please": {
+						Category: "dvi",
+						ID:       1,
+						Allowed: []string{
+							"<all>",
+						},
+						Tokens: []string{
+							"ValidToken",
+						},
+					},
+				},
+			},
+			want: newInvalidControlNameError("No+please"),
+		},
+		{
+			name: "InvalidNameColon",
+			ci: controlImport{
+				Tokens: map[string]string{
+					"ValidToken": "325ce159-0ddf-433a-966f-a94b313a7eb5",
+				},
+				Controls: map[string]Control{
+					"No:please": {
+						Category: "dvi",
+						ID:       1,
+						Allowed: []string{
+							"<all>",
+						},
+						Tokens: []string{
+							"ValidToken",
+						},
+					},
+				},
+			},
+			want: newInvalidControlNameError("No:please"),
+		},
+		{
 			name: "ValidToken",
 			ci: controlImport{
 				Tokens: map[string]string{

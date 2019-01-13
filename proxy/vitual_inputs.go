@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
-	"github.com/pkg/errors"
 )
 
 var virtualInputBasePath = "/dev/sps/io"
@@ -49,8 +48,9 @@ func (vi *digitalVirtualInput) GetPath() string {
 	return ep
 }
 
-func newDigitalVirtualInput(id int, command, token string) (*digitalVirtualInput, error) {
+func newDigitalVirtualInput(ID int, command, token string) (*digitalVirtualInput, error) {
 	vi := new(digitalVirtualInput)
+	vi.ID = ID
 	err := vi.setCommand(command)
 	if err != nil {
 		return vi, err
@@ -60,12 +60,8 @@ func newDigitalVirtualInput(id int, command, token string) (*digitalVirtualInput
 }
 
 // newDigitalVirtualInput returns a DigitalVitualEndpoint with data parsed from req
-func parseRequestDigitalVirtualInput(req *http.Request) (ID int, command, token string, err error) {
-	ID, err = strconv.Atoi(mux.Vars(req)["id"])
-	if err != nil {
-		err = errors.Wrap(err, "Error casting virtual input ID to integer")
-		return
-	}
+func parseRequestDigitalVirtualInput(req *http.Request) (control, command, token string) {
+	control = mux.Vars(req)["control"]
 	command = mux.Vars(req)["command"]
 	token = req.URL.Query().Get("t")
 	return

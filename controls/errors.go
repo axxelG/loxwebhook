@@ -2,7 +2,7 @@ package controls
 
 import "fmt"
 
-// ControlError implements
+// ControlError implements GetType() wich is used in tests to test the validation.
 type ControlError interface {
 	Error() string
 	GetType() string
@@ -28,6 +28,26 @@ func newInvalidCategoryError(Category string) *InvalidCategoryError {
 	}
 }
 
+// InvalidControlNameError is an error type for invalid commands
+type InvalidControlNameError struct {
+	Name string
+}
+
+// GetType returns a string containing the error Type
+func (e *InvalidControlNameError) GetType() string {
+	return "InvalidControlNameError"
+}
+
+func (e *InvalidControlNameError) Error() string {
+	return fmt.Sprintf("Invalid name for control: %s Only ASCII letters (a-z), underscore (_) and hyphen (-) allowed.", e.Name)
+}
+
+func newInvalidControlNameError(name string) *InvalidControlNameError {
+	return &InvalidControlNameError{
+		Name: name,
+	}
+}
+
 // InvalidCommandError is an error type for invalid commands
 type InvalidCommandError struct {
 	Category string
@@ -43,7 +63,7 @@ func (e *InvalidCommandError) Error() string {
 	return fmt.Sprintf("Invalid comand for type %s: %s", e.Category, e.Command)
 }
 
-func newInvalidCommandError(category string, command string) *InvalidCommandError {
+func newInvalidCommandError(category, command string) *InvalidCommandError {
 	return &InvalidCommandError{
 		Category: category,
 		Command:  command,

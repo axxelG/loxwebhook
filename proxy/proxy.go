@@ -8,8 +8,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"strconv"
-	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -17,6 +15,7 @@ import (
 
 	"github.com/axxelG/loxwebhook/config"
 	"github.com/axxelG/loxwebhook/controls"
+	"github.com/axxelG/loxwebhook/helpers"
 )
 
 var limiter = rate.NewLimiter(1, 3)
@@ -40,11 +39,6 @@ type controlError struct {
 func (e *controlError) Error() string {
 	return e.err
 }
-
-// func sendErrorPage(w http.ResponseWriter, text string, responseCode int) {
-// 	w.WriteHeader(responseCode)
-// 	fmt.Fprintf(w, text)
-// }
 
 func sendErrorPage(logger *log.Logger, w http.ResponseWriter, err error, responseCode int) {
 	logger.Println(err)
@@ -89,62 +83,40 @@ func getTokenFromRequest(req *http.Request) (string, error) {
 	return tokens[0], nil
 }
 
-func getValidControls(controls map[string]controls.Control) map[int]bool {
-	validControls := map[int]bool{}
-	for _, control := range controls {
-		validControls[control.ID] = true
+func authorize(control controls.Control, tokens map[string]string, reqToken, reqCommand string) error {
+	reqTokenKey, ok := helpers.GetMapStringKeyFromStringValue(reqToken, tokens)
+	if !ok {
+		return fmt.Errorf("Unknown token: %s", reqToken)
 	}
-	return validControls
+	if !helpers.IsStringInSlice(reqTokenKey, control.Tokens) {
+		return fmt.Errorf("Token %s is not valid for this control", reqTokenKey)
+	}
+	if !helpers.IsStringInSlice(reqCommand, control.Allowed) {
+		return fmt.Errorf("Command %s is not allowed on this control", reqCommand)
+	}
+	return nil
 }
 
-func getValidTokens(tokens map[string]string, controls map[string]controls.Control, req *http.Request) (map[string]bool, error) {
-	parts := strings.Split(strings.ToLower(req.URL.Path), "/")
-	category := parts[1]
-	ID, err := strconv.Atoi(parts[2])
-	if err != nil {
-		err = &controlError{
-			err: errors.Wrap(err, "Error converting control ID").Error(),
-		}
-		return nil, err
+func getControlID(controls map[string]controls.Control, control string) (int, error) {
+	ctl, ok := controls[control]
+	if !ok {
+		return 0, fmt.Errorf("Unknown control %s", control)
 	}
-	command := parts[3]
-	validTokenNames := []string{}
-	for _, control := range controls {
-		if control.Category == category && control.ID == ID {
-			for _, allowedCommand := range control.Allowed {
-				if allowedCommand == "<all>" || allowedCommand == command {
-					validTokenNames = append(validTokenNames, control.Tokens...)
-				}
-			}
-		}
-	}
-	validTokens := map[string]bool{}
-	for _, name := range validTokenNames {
-		validTokens[tokens[name]] = true
-	}
-	return validTokens, nil
-}
-
-func autorize(tokens map[string]string, controls map[string]controls.Control, req *http.Request) error {
-	validTokens, err := getValidTokens(tokens, controls, req)
-	if err != nil {
-		return err
-	}
-	givenToken, err := getTokenFromRequest(req)
-	if err != nil {
-		return err
-	}
-	if validTokens[givenToken] {
-		return nil
-	}
-	return &tokenError{
-		err: "Token not valid for this request",
-	}
+	return ctl.ID, nil
 }
 
 // StartServer starts the proxy server
-func StartServer(listener net.Listener, tlsConfig *tls.Config, cfg *config.Config, loggerErr *log.Logger, loggerAcc *log.Logger, tokens map[string]string, controls map[string]controls.Control) error {
-	RootHandler := func(w http.ResponseWriter, req *http.Request) {
+func StartServer(
+	listener net.Listener,
+	tlsConfig *tls.Config,
+	cfg *config.Config,
+	loggerErr *log.Logger,
+	loggerAcc *log.Logger,
+	tokens map[string]string,
+	controls map[string]controls.Control,
+) error {
+
+	notFoundHandler := func(w http.ResponseWriter, req *http.Request) {
 		http.NotFound(w, req)
 	}
 
@@ -168,24 +140,23 @@ func StartServer(listener net.Listener, tlsConfig *tls.Config, cfg *config.Confi
 	}
 
 	DigitalVirtualInputHandler := func(w http.ResponseWriter, req *http.Request) {
-		ID, command, token, err := parseRequestDigitalVirtualInput(req)
-		if err != nil {
+		controlName, command, token := parseRequestDigitalVirtualInput(req)
+		ctl, ok := controls[controlName]
+		if !ok {
+			err := fmt.Errorf("Unknown control %s", controlName)
 			sendErrorPage(loggerErr, w, err, http.StatusNotFound)
+			return
 		}
-		vi, err := newDigitalVirtualInput(ID, command, token)
+		err := authorize(ctl, tokens, token, command)
+		if err != nil {
+			sendErrorPage(loggerErr, w, err, http.StatusUnauthorized)
+			return
+		}
+		vi, err := newDigitalVirtualInput(ctl.ID, command, token)
 		if err != nil {
 			sendErrorPage(loggerErr, w, err, http.StatusNotFound)
 			return
 		}
-		validControls := getValidControls(controls)
-		if !validControls[vi.ID] {
-			err = &controlError{
-				err: fmt.Sprintf("Control not found: %d", vi.ID),
-			}
-			sendErrorPage(loggerErr, w, err, http.StatusNotFound)
-			return
-		}
-		err = autorize(tokens, controls, req)
 		if err != nil {
 			sendErrorPage(loggerErr, w, err, http.StatusUnauthorized)
 			return
@@ -213,11 +184,11 @@ func StartServer(listener net.Listener, tlsConfig *tls.Config, cfg *config.Confi
 	}
 
 	router := mux.NewRouter()
-	router.HandleFunc("/", RootHandler)
+	router.HandleFunc("/", notFoundHandler)
 	for _, control := range controls {
 		switch control.Category {
 		case "dvi":
-			router.HandleFunc("/dvi/{id:[0-9]+}/{command}", LoggingHandler(Limiter(DigitalVirtualInputHandler)))
+			router.HandleFunc("/dvi/{control}/{command}", LoggingHandler(Limiter(DigitalVirtualInputHandler)))
 		}
 	}
 	s := &http.Server{
