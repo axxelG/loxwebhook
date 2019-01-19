@@ -48,7 +48,7 @@ func sendErrorPage(logger *log.Logger, w http.ResponseWriter, err error, respons
 	fmt.Fprintf(w, "%s", err)
 }
 
-func sendRequest(cfg *config.Config, path string) (*http.Response, error) {
+func sendRequest(cfg *config.Config, path string, logger *log.Logger) (*http.Response, error) {
 	url := cfg.MiniserverURL
 	url.Path = path
 	client := http.Client{
@@ -63,6 +63,7 @@ func sendRequest(cfg *config.Config, path string) (*http.Response, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "Error sending request to Miniserver")
 	}
+	logger.Printf("%s:%s %s", req.RemoteAddr, req.Method, req.URL.Path)
 	return resp, nil
 }
 
@@ -169,7 +170,7 @@ func StartServer(
 			fmt.Fprintf(w, "Path:          %s\n", vi.GetPath())
 			return
 		}
-		resp, err := sendRequest(cfg, vi.GetPath())
+		resp, err := sendRequest(cfg, vi.GetPath(), loggerAcc)
 		if err != nil {
 			code := http.StatusBadGateway
 			if e, ok := err.(*url.Error); ok {
