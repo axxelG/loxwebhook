@@ -7,7 +7,7 @@ import (
 )
 
 func Test_authorize(t *testing.T) {
-	tokens := map[string]string{
+	authKeys := map[string]string{
 		"test1": "f7932d8a-b37f-46dc-84ee-276c545aec48",
 		"test2": "88f3cc74-b741-404e-b6a3-136d76796de8",
 		"test3": "d7d47ae7-44d6-4b4b-b65d-06e7f5bf108e",
@@ -19,15 +19,15 @@ func Test_authorize(t *testing.T) {
 			"pulse",
 			"impuls",
 		},
-		Tokens: []string{
+		AuthKeys: []string{
 			"test1",
 			"test2",
 		},
 	}
 	type args struct {
 		control    controls.Control
-		tokens     map[string]string
-		reqToken   string
+		authKeys   map[string]string
+		reqAuthKey string
 		reqCommand string
 	}
 	tests := []struct {
@@ -39,8 +39,8 @@ func Test_authorize(t *testing.T) {
 			name: "ValidAuth",
 			args: args{
 				control:    ctl,
-				tokens:     tokens,
-				reqToken:   "88f3cc74-b741-404e-b6a3-136d76796de8",
+				authKeys:   authKeys,
+				reqAuthKey: "88f3cc74-b741-404e-b6a3-136d76796de8",
 				reqCommand: "pulse",
 			},
 			wantErr: false,
@@ -49,28 +49,28 @@ func Test_authorize(t *testing.T) {
 			name: "InvalidCommand",
 			args: args{
 				control:    ctl,
-				tokens:     tokens,
-				reqToken:   "88f3cc74-b741-404e-b6a3-136d76796de8",
+				authKeys:   authKeys,
+				reqAuthKey: "88f3cc74-b741-404e-b6a3-136d76796de8",
 				reqCommand: "on",
 			},
 			wantErr: true,
 		},
 		{
-			name: "InvalidExistingToken",
+			name: "InvalidExistingAuthKey",
 			args: args{
 				control:    ctl,
-				tokens:     tokens,
-				reqToken:   "d7d47ae7-44d6-4b4b-b65d-06e7f5bf108e",
+				authKeys:   authKeys,
+				reqAuthKey: "d7d47ae7-44d6-4b4b-b65d-06e7f5bf108e",
 				reqCommand: "pulse",
 			},
 			wantErr: true,
 		},
 		{
-			name: "InvalidNonExistingToken",
+			name: "InvalidNonExistingAuthKey",
 			args: args{
 				control:    ctl,
-				tokens:     tokens,
-				reqToken:   "8c9564a1-6af7-4ed0-8656-add107e882a6",
+				authKeys:   authKeys,
+				reqAuthKey: "8c9564a1-6af7-4ed0-8656-add107e882a6",
 				reqCommand: "pulse",
 			},
 			wantErr: true,
@@ -78,7 +78,7 @@ func Test_authorize(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := authorize(tt.args.control, tt.args.tokens, tt.args.reqToken, tt.args.reqCommand); (err != nil) != tt.wantErr {
+			if err := authorize(tt.args.control, tt.args.authKeys, tt.args.reqAuthKey, tt.args.reqCommand); (err != nil) != tt.wantErr {
 				t.Errorf("authorize() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

@@ -66,11 +66,13 @@ func main() {
 	loggerMain.Println("====================")
 	logErrAndExit := func(err error) {
 		loggerMain.Print(err)
-		fmt.Printf("An error occured. See %s for details.\n", cfg.LogFileMain)
+		if cfg.LogFileMain != "" {
+			fmt.Printf("An error occured. See %s for details.\n", cfg.LogFileMain)
+		}
 		os.Exit(1)
 	}
 
-	tokens, controls, err := controls.Read(cfg.ControlsFiles)
+	authKeys, controls, err := controls.Read(cfg.ControlsFiles)
 	if err != nil {
 		logErrAndExit(errors.Wrap(err, "Error importing controls"))
 	}
@@ -91,7 +93,7 @@ func main() {
 	daemon.SdNotify(false, daemon.SdNotifyReady)
 	loggerMain.Println("Listener started")
 	loggerMain.Println("====================")
-	err = proxy.StartServer(listener, tlsConfig, cfg, LoggerHTTPErrors, LoggerHTTPAccess, tokens, controls)
+	err = proxy.StartServer(listener, tlsConfig, cfg, LoggerHTTPErrors, LoggerHTTPAccess, authKeys, controls)
 	if err != nil {
 		logErrAndExit(errors.Wrap(err, "Error starting server"))
 		os.Exit(1)

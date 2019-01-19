@@ -1,4 +1,4 @@
-[Tokens]
+[AuthKeys]
 testTwo   = "69b9a1ad-1224-4c93-8411-e88e65ebe582"
 
 [Controls]
@@ -9,6 +9,6 @@ testTwo   = "69b9a1ad-1224-4c93-8411-e88e65ebe582"
     Allowed = [
         "on",
     ]
-    Tokens = [
+    AuthKeys = [
         "testTwo",
     ]

@@ -12,7 +12,7 @@ import (
 )
 
 type controlImport struct {
-	Tokens   map[string]string
+	AuthKeys map[string]string
 	Controls map[string]Control
 }
 
@@ -26,11 +26,11 @@ func (ci controlImport) Validate() ControlError {
 		if err != nil {
 			return err
 		}
-		// Check if token configured in this control exists
+		// Check if authKey configured in this control exists
 		for _, c := range ci.Controls {
-			for _, t := range c.Tokens {
-				if _, ok := ci.Tokens[t]; !ok {
-					return newInvalidTokenError(t)
+			for _, t := range c.AuthKeys {
+				if _, ok := ci.AuthKeys[t]; !ok {
+					return newInvalidAuthKeyError(t)
 				}
 			}
 		}
@@ -43,7 +43,7 @@ type Control struct {
 	Category string
 	ID       int
 	Allowed  []string
-	Tokens   []string
+	AuthKeys []string
 }
 
 func (c *Control) validateAllowedCommandsDvi() ControlError {
@@ -92,6 +92,9 @@ func (c *Control) validateAllowedCommandsDvi() ControlError {
 
 // Validate returns an error if a control contains invalid data
 func (c *Control) Validate() ControlError {
+	if len(c.AuthKeys) < 1 {
+		return newNoAuthKeysError()
+	}
 	switch c.Category {
 	case
 		"dvi":
@@ -106,7 +109,7 @@ func (c *Control) Validate() ControlError {
 }
 
 // Read imports all *.toml files from dir (including subdirectories) and returns
-// tokens and controls
+// authKeys and controls
 func Read(dir string) (map[string]string, map[string]Control, error) {
 	var files []string
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
@@ -118,7 +121,7 @@ func Read(dir string) (map[string]string, map[string]Control, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	tokens := make(map[string]string)
+	authKeys := make(map[string]string)
 	controls := make(map[string]Control)
 	impCtl := new(controlImport)
 	for _, fn := range files {
@@ -131,13 +134,13 @@ func Read(dir string) (map[string]string, map[string]Control, error) {
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "Error validating controls")
 	}
-	for k, v := range impCtl.Tokens {
-		tokens[k] = v
+	for k, v := range impCtl.AuthKeys {
+		authKeys[k] = v
 	}
 	for k, v := range impCtl.Controls {
 		controls[k] = v
 	}
-	return tokens, controls, nil
+	return authKeys, controls, nil
 }
 
 func importFile(impCtl *controlImport, fn string) error {

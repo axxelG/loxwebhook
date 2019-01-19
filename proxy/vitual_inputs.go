@@ -14,7 +14,7 @@ var virtualInputBasePath = "/dev/sps/io"
 type digitalVirtualInput struct {
 	ID      int
 	Command string
-	Token   string
+	AuthKey string
 }
 
 func (vi *digitalVirtualInput) setCommand(command string) (err error) {
@@ -48,21 +48,21 @@ func (vi *digitalVirtualInput) GetPath() string {
 	return ep
 }
 
-func newDigitalVirtualInput(ID int, command, token string) (*digitalVirtualInput, error) {
+func newDigitalVirtualInput(ID int, command, authKey string) (*digitalVirtualInput, error) {
 	vi := new(digitalVirtualInput)
 	vi.ID = ID
 	err := vi.setCommand(command)
 	if err != nil {
 		return vi, err
 	}
-	vi.Token = token
+	vi.AuthKey = authKey
 	return vi, nil
 }
 
 // newDigitalVirtualInput returns a DigitalVitualEndpoint with data parsed from req
-func parseRequestDigitalVirtualInput(req *http.Request) (control, command, token string) {
+func parseRequestDigitalVirtualInput(req *http.Request) (control, command, authKey string) {
 	control = mux.Vars(req)["control"]
 	command = mux.Vars(req)["command"]
-	token = req.URL.Query().Get("t")
+	authKey = req.URL.Query().Get("k")
 	return
 }

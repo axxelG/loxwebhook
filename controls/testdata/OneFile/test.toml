@@ -1,4 +1,4 @@
-[Tokens]
+[AuthKeys]
 testOne   = "43b2c690-f281-42bb-af2d-979f5dbe9517"
 testTwo   = "69b9a1ad-1224-4c93-8411-e88e65ebe582"
 testThree = "84627dbd-bd68-476f-9e53-35522285783b"
@@ -12,7 +12,7 @@ testThree = "84627dbd-bd68-476f-9e53-35522285783b"
     Allowed = [
         "<all>",
     ]
-    Tokens = [
+    AuthKeys = [
         "testOne",
     ]
 
@@ -22,7 +22,7 @@ testThree = "84627dbd-bd68-476f-9e53-35522285783b"
     Allowed = [
         "on",
     ]
-    Tokens = [
+    AuthKeys = [
         "testTwo",
     ]
 
@@ -33,7 +33,7 @@ testThree = "84627dbd-bd68-476f-9e53-35522285783b"
         "on",
         "off",
     ]
-    Tokens = [
+    AuthKeys = [
         "testOne",
         "testThree",
     ]

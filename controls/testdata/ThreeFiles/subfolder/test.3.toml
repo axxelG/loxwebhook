@@ -1,4 +1,4 @@
-[Tokens]
+[AuthKeys]
 testThree = "84627dbd-bd68-476f-9e53-35522285783b"
 
 [Controls]
@@ -10,7 +10,7 @@ testThree = "84627dbd-bd68-476f-9e53-35522285783b"
         "on",
         "off",
     ]
-    Tokens = [
+    AuthKeys = [
         "testOne",
         "testThree",
     ]

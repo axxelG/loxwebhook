@@ -20,11 +20,11 @@ import (
 
 var limiter = rate.NewLimiter(1, 3)
 
-type tokenError struct {
+type authKeyError struct {
 	err string
 }
 
-func (e *tokenError) Error() string {
+func (e *authKeyError) Error() string {
 	return e.err
 }
 
@@ -73,23 +73,23 @@ func forwardResponse(resp *http.Response, w http.ResponseWriter) {
 	resp.Body.Close()
 }
 
-func getTokenFromRequest(req *http.Request) (string, error) {
-	tokens, ok := req.URL.Query()["t"]
+func getAuthKeyFromRequest(req *http.Request) (string, error) {
+	authKeys, ok := req.URL.Query()["t"]
 	if !ok {
-		return "", &tokenError{
-			err: "Request without access token",
+		return "", &authKeyError{
+			err: "Request without access authKey",
 		}
 	}
-	return tokens[0], nil
+	return authKeys[0], nil
 }
 
-func authorize(control controls.Control, tokens map[string]string, reqToken, reqCommand string) error {
-	reqTokenKey, ok := helpers.GetMapStringKeyFromStringValue(reqToken, tokens)
+func authorize(control controls.Control, authKeys map[string]string, reqAuthKey, reqCommand string) error {
+	reqAuthKeyKey, ok := helpers.GetMapStringKeyFromStringValue(reqAuthKey, authKeys)
 	if !ok {
-		return fmt.Errorf("Unknown token: %s", reqToken)
+		return fmt.Errorf("Unknown authKey: %s", reqAuthKey)
 	}
-	if !helpers.IsStringInSlice(reqTokenKey, control.Tokens) {
-		return fmt.Errorf("Token %s is not valid for this control", reqTokenKey)
+	if !helpers.IsStringInSlice(reqAuthKeyKey, control.AuthKeys) {
+		return fmt.Errorf("AuthKey %s is not valid for this control", reqAuthKeyKey)
 	}
 	if !helpers.IsStringInSlice(reqCommand, control.Allowed) {
 		return fmt.Errorf("Command %s is not allowed on this control", reqCommand)
@@ -112,7 +112,7 @@ func StartServer(
 	cfg *config.Config,
 	loggerErr *log.Logger,
 	loggerAcc *log.Logger,
-	tokens map[string]string,
+	authKeys map[string]string,
 	controls map[string]controls.Control,
 ) error {
 
@@ -140,19 +140,19 @@ func StartServer(
 	}
 
 	DigitalVirtualInputHandler := func(w http.ResponseWriter, req *http.Request) {
-		controlName, command, token := parseRequestDigitalVirtualInput(req)
+		controlName, command, authKey := parseRequestDigitalVirtualInput(req)
 		ctl, ok := controls[controlName]
 		if !ok {
 			err := fmt.Errorf("Unknown control %s", controlName)
 			sendErrorPage(loggerErr, w, err, http.StatusNotFound)
 			return
 		}
-		err := authorize(ctl, tokens, token, command)
+		err := authorize(ctl, authKeys, authKey, command)
 		if err != nil {
 			sendErrorPage(loggerErr, w, err, http.StatusUnauthorized)
 			return
 		}
-		vi, err := newDigitalVirtualInput(ctl.ID, command, token)
+		vi, err := newDigitalVirtualInput(ctl.ID, command, authKey)
 		if err != nil {
 			sendErrorPage(loggerErr, w, err, http.StatusNotFound)
 			return
@@ -165,7 +165,7 @@ func StartServer(
 			fmt.Fprintf(w, "SIMULATE\n")
 			fmt.Fprintf(w, "Virtual Input: %d\n", vi.ID)
 			fmt.Fprintf(w, "Command:       %s\n", vi.Command)
-			fmt.Fprintf(w, "Token:         %s\n", vi.Token)
+			fmt.Fprintf(w, "AuthKey:         %s\n", vi.AuthKey)
 			fmt.Fprintf(w, "Path:          %s\n", vi.GetPath())
 			return
 		}

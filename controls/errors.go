@@ -70,22 +70,42 @@ func newInvalidCommandError(category, command string) *InvalidCommandError {
 	}
 }
 
-// InvalidTokenError is an error type for invalid tokens
-type InvalidTokenError struct {
+// InvalidAuthKeyError is an error type for invalid authKeys
+type InvalidAuthKeyError struct {
 	Name string
 }
 
 // GetType returns a string containing the error Type
-func (e *InvalidTokenError) GetType() string {
-	return "InvalidTokenError"
+func (e *InvalidAuthKeyError) GetType() string {
+	return "InvalidAuthKeyError"
 }
 
-func (e *InvalidTokenError) Error() string {
-	return fmt.Sprintf("Invalid token: %s", e.Name)
+func (e *InvalidAuthKeyError) Error() string {
+	return fmt.Sprintf("Invalid authKey: %s", e.Name)
 }
 
-func newInvalidTokenError(name string) *InvalidTokenError {
-	return &InvalidTokenError{
+func newInvalidAuthKeyError(name string) *InvalidAuthKeyError {
+	return &InvalidAuthKeyError{
 		Name: name,
+	}
+}
+
+// NoAuthKeysError is an error type for invalid authKeys
+type NoAuthKeysError struct {
+	Name string
+}
+
+// GetType returns a string containing the error Type
+func (e *NoAuthKeysError) GetType() string {
+	return "NoAuthKeysError"
+}
+
+func (e *NoAuthKeysError) Error() string {
+	return "No authKeys defined"
+}
+
+func newNoAuthKeysError() *NoAuthKeysError {
+	return &NoAuthKeysError{
+		Name: "all",
 	}
 }

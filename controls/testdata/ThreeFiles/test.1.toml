@@ -1,4 +1,4 @@
-[Tokens]
+[AuthKeys]
 testOne   = "43b2c690-f281-42bb-af2d-979f5dbe9517"
 
 [Controls]
@@ -9,6 +9,6 @@ testOne   = "43b2c690-f281-42bb-af2d-979f5dbe9517"
     Allowed = [
         "<all>",
     ]
-    Tokens = [
+    AuthKeys = [
         "testOne",
     ]

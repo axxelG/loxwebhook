@@ -13,7 +13,7 @@ func TestRead(t *testing.T) {
 	tests := []struct {
 		name         string
 		args         args
-		wantTokens   map[string]string
+		wantAuthKeys map[string]string
 		wantControls map[string]Control
 		wantErr      bool
 	}{
@@ -22,7 +22,7 @@ func TestRead(t *testing.T) {
 			args: args{
 				dir: filepath.Join("testdata", "OneFile"),
 			},
-			wantTokens: map[string]string{
+			wantAuthKeys: map[string]string{
 				"testOne":   "43b2c690-f281-42bb-af2d-979f5dbe9517",
 				"testTwo":   "69b9a1ad-1224-4c93-8411-e88e65ebe582",
 				"testThree": "84627dbd-bd68-476f-9e53-35522285783b",
@@ -34,7 +34,7 @@ func TestRead(t *testing.T) {
 					Allowed: []string{
 						"<all>",
 					},
-					Tokens: []string{
+					AuthKeys: []string{
 						"testOne",
 					},
 				},
@@ -44,7 +44,7 @@ func TestRead(t *testing.T) {
 					Allowed: []string{
 						"on",
 					},
-					Tokens: []string{
+					AuthKeys: []string{
 						"testTwo",
 					},
 				},
@@ -55,7 +55,7 @@ func TestRead(t *testing.T) {
 						"on",
 						"off",
 					},
-					Tokens: []string{
+					AuthKeys: []string{
 						"testOne",
 						"testThree",
 					},
@@ -67,7 +67,7 @@ func TestRead(t *testing.T) {
 			args: args{
 				dir: filepath.Join("testdata", "ThreeFiles"),
 			},
-			wantTokens: map[string]string{
+			wantAuthKeys: map[string]string{
 				"testOne":   "43b2c690-f281-42bb-af2d-979f5dbe9517",
 				"testTwo":   "69b9a1ad-1224-4c93-8411-e88e65ebe582",
 				"testThree": "84627dbd-bd68-476f-9e53-35522285783b",
@@ -79,7 +79,7 @@ func TestRead(t *testing.T) {
 					Allowed: []string{
 						"<all>",
 					},
-					Tokens: []string{
+					AuthKeys: []string{
 						"testOne",
 					},
 				},
@@ -89,7 +89,7 @@ func TestRead(t *testing.T) {
 					Allowed: []string{
 						"on",
 					},
-					Tokens: []string{
+					AuthKeys: []string{
 						"testTwo",
 					},
 				},
@@ -100,7 +100,7 @@ func TestRead(t *testing.T) {
 						"on",
 						"off",
 					},
-					Tokens: []string{
+					AuthKeys: []string{
 						"testOne",
 						"testThree",
 					},
@@ -110,13 +110,13 @@ func TestRead(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotTokens, gotControls, err := Read(tt.args.dir)
+			gotAuthKeys, gotControls, err := Read(tt.args.dir)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Read() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(gotTokens, tt.wantTokens) {
-				t.Errorf("Read() gotTokens = %v, want %v", gotTokens, tt.wantTokens)
+			if !reflect.DeepEqual(gotAuthKeys, tt.wantAuthKeys) {
+				t.Errorf("Read() gotAuthKeys = %v, want %v", gotAuthKeys, tt.wantAuthKeys)
 			}
 			if !reflect.DeepEqual(gotControls, tt.wantControls) {
 				t.Errorf("Read() gotControls = %v, want %v", gotControls, tt.wantControls)
@@ -139,7 +139,7 @@ func TestControl_Validate(t *testing.T) {
 				Allowed: []string{
 					"<all>",
 				},
-				Tokens: []string{
+				AuthKeys: []string{
 					"f6694286-66e6-4b79-8936-9e45284eba60",
 				},
 			},
@@ -153,7 +153,7 @@ func TestControl_Validate(t *testing.T) {
 				Allowed: []string{
 					"<all>",
 				},
-				Tokens: []string{
+				AuthKeys: []string{
 					"f6694286-66e6-4b79-8936-9e45284eba60",
 				},
 			},
@@ -167,7 +167,7 @@ func TestControl_Validate(t *testing.T) {
 				Allowed: []string{
 					"NotAllowedCommand",
 				},
-				Tokens: []string{
+				AuthKeys: []string{
 					"f6694286-66e6-4b79-8936-9e45284eba60",
 				},
 			},
@@ -199,8 +199,8 @@ func Test_controlImport_Validate(t *testing.T) {
 		{
 			name: "ValidName",
 			ci: controlImport{
-				Tokens: map[string]string{
-					"ValidToken": "325ce159-0ddf-433a-966f-a94b313a7eb5",
+				AuthKeys: map[string]string{
+					"ValidAuthKey": "325ce159-0ddf-433a-966f-a94b313a7eb5",
 				},
 				Controls: map[string]Control{
 					"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-": {
@@ -209,8 +209,8 @@ func Test_controlImport_Validate(t *testing.T) {
 						Allowed: []string{
 							"<all>",
 						},
-						Tokens: []string{
-							"ValidToken",
+						AuthKeys: []string{
+							"ValidAuthKey",
 						},
 					},
 				},
@@ -220,8 +220,8 @@ func Test_controlImport_Validate(t *testing.T) {
 		{
 			name: "InvalidNameSpace",
 			ci: controlImport{
-				Tokens: map[string]string{
-					"ValidToken": "325ce159-0ddf-433a-966f-a94b313a7eb5",
+				AuthKeys: map[string]string{
+					"ValidAuthKey": "325ce159-0ddf-433a-966f-a94b313a7eb5",
 				},
 				Controls: map[string]Control{
 					"No spaces please": {
@@ -230,8 +230,8 @@ func Test_controlImport_Validate(t *testing.T) {
 						Allowed: []string{
 							"<all>",
 						},
-						Tokens: []string{
-							"ValidToken",
+						AuthKeys: []string{
+							"ValidAuthKey",
 						},
 					},
 				},
@@ -241,8 +241,8 @@ func Test_controlImport_Validate(t *testing.T) {
 		{
 			name: "InvalidNamePlus",
 			ci: controlImport{
-				Tokens: map[string]string{
-					"ValidToken": "325ce159-0ddf-433a-966f-a94b313a7eb5",
+				AuthKeys: map[string]string{
+					"ValidAuthKey": "325ce159-0ddf-433a-966f-a94b313a7eb5",
 				},
 				Controls: map[string]Control{
 					"No+please": {
@@ -251,8 +251,8 @@ func Test_controlImport_Validate(t *testing.T) {
 						Allowed: []string{
 							"<all>",
 						},
-						Tokens: []string{
-							"ValidToken",
+						AuthKeys: []string{
+							"ValidAuthKey",
 						},
 					},
 				},
@@ -262,8 +262,8 @@ func Test_controlImport_Validate(t *testing.T) {
 		{
 			name: "InvalidNameColon",
 			ci: controlImport{
-				Tokens: map[string]string{
-					"ValidToken": "325ce159-0ddf-433a-966f-a94b313a7eb5",
+				AuthKeys: map[string]string{
+					"ValidAuthKey": "325ce159-0ddf-433a-966f-a94b313a7eb5",
 				},
 				Controls: map[string]Control{
 					"No:please": {
@@ -272,8 +272,8 @@ func Test_controlImport_Validate(t *testing.T) {
 						Allowed: []string{
 							"<all>",
 						},
-						Tokens: []string{
-							"ValidToken",
+						AuthKeys: []string{
+							"ValidAuthKey",
 						},
 					},
 				},
@@ -281,10 +281,10 @@ func Test_controlImport_Validate(t *testing.T) {
 			want: newInvalidControlNameError("No:please"),
 		},
 		{
-			name: "ValidToken",
+			name: "ValidAuthKey",
 			ci: controlImport{
-				Tokens: map[string]string{
-					"ValidToken": "325ce159-0ddf-433a-966f-a94b313a7eb5",
+				AuthKeys: map[string]string{
+					"ValidAuthKey": "325ce159-0ddf-433a-966f-a94b313a7eb5",
 				},
 				Controls: map[string]Control{
 					"ControlName": {
@@ -293,8 +293,8 @@ func Test_controlImport_Validate(t *testing.T) {
 						Allowed: []string{
 							"<all>",
 						},
-						Tokens: []string{
-							"ValidToken",
+						AuthKeys: []string{
+							"ValidAuthKey",
 						},
 					},
 				},
@@ -302,10 +302,10 @@ func Test_controlImport_Validate(t *testing.T) {
 			want: nil,
 		},
 		{
-			name: "InvalidToken",
+			name: "InvalidAuthKey",
 			ci: controlImport{
-				Tokens: map[string]string{
-					"ValidToken": "325ce159-0ddf-433a-966f-a94b313a7eb5",
+				AuthKeys: map[string]string{
+					"ValidAuthKey": "325ce159-0ddf-433a-966f-a94b313a7eb5",
 				},
 				Controls: map[string]Control{
 					"ControlName": {
@@ -314,13 +314,13 @@ func Test_controlImport_Validate(t *testing.T) {
 						Allowed: []string{
 							"<all>",
 						},
-						Tokens: []string{
-							"InvalidToken",
+						AuthKeys: []string{
+							"InvalidAuthKey",
 						},
 					},
 				},
 			},
-			want: newInvalidTokenError("DummyName"),
+			want: newInvalidAuthKeyError("DummyName"),
 		},
 	}
 	for _, tt := range tests {
