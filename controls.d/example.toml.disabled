@@ -8,25 +8,15 @@ testThree = "84627dbd-bd68-476f-9e53-35522285783b"
 
     [Controls.test1]
     Category = "dvi"
-    ID = 8
-    Allowed = [
-        "<all>",
-    ]
-    AuthKeys = [
-        "testOn",
-    ]
-
-    [Controls.test2]
-    Category = "dvi"
     ID = 7
     Allowed = [
         "on",
     ]
     AuthKeys = [
-        "testOn",
+        "testOne",
     ]
 
-    [Controls.test3]
+    [Controls.test2]
     Category = "dvi"
     ID = 6
     Allowed = [

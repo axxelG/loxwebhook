@@ -7,7 +7,7 @@ testOne   = "43b2c690-f281-42bb-af2d-979f5dbe9517"
     Category = "dvi"
     ID = 1
     Allowed = [
-        "<all>",
+        "pulse",
     ]
     AuthKeys = [
         "testOne",

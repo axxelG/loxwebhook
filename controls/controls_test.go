@@ -32,7 +32,7 @@ func TestRead(t *testing.T) {
 					Category: "dvi",
 					ID:       1,
 					Allowed: []string{
-						"<all>",
+						"pulse",
 					},
 					AuthKeys: []string{
 						"testOne",
@@ -77,7 +77,7 @@ func TestRead(t *testing.T) {
 					Category: "dvi",
 					ID:       1,
 					Allowed: []string{
-						"<all>",
+						"pulse",
 					},
 					AuthKeys: []string{
 						"testOne",
@@ -137,7 +137,7 @@ func TestControl_Validate(t *testing.T) {
 				Category: "dvi",
 				ID:       1,
 				Allowed: []string{
-					"<all>",
+					"pulse",
 				},
 				AuthKeys: []string{
 					"f6694286-66e6-4b79-8936-9e45284eba60",
@@ -151,7 +151,7 @@ func TestControl_Validate(t *testing.T) {
 				Category: "NonExistendCategory",
 				ID:       1,
 				Allowed: []string{
-					"<all>",
+					"pulse",
 				},
 				AuthKeys: []string{
 					"f6694286-66e6-4b79-8936-9e45284eba60",
@@ -207,7 +207,7 @@ func Test_controlImport_Validate(t *testing.T) {
 						Category: "dvi",
 						ID:       1,
 						Allowed: []string{
-							"<all>",
+							"pulse",
 						},
 						AuthKeys: []string{
 							"ValidAuthKey",
@@ -228,7 +228,7 @@ func Test_controlImport_Validate(t *testing.T) {
 						Category: "dvi",
 						ID:       1,
 						Allowed: []string{
-							"<all>",
+							"pulse",
 						},
 						AuthKeys: []string{
 							"ValidAuthKey",
@@ -249,7 +249,7 @@ func Test_controlImport_Validate(t *testing.T) {
 						Category: "dvi",
 						ID:       1,
 						Allowed: []string{
-							"<all>",
+							"pulse",
 						},
 						AuthKeys: []string{
 							"ValidAuthKey",
@@ -270,7 +270,7 @@ func Test_controlImport_Validate(t *testing.T) {
 						Category: "dvi",
 						ID:       1,
 						Allowed: []string{
-							"<all>",
+							"pulse",
 						},
 						AuthKeys: []string{
 							"ValidAuthKey",
@@ -291,7 +291,7 @@ func Test_controlImport_Validate(t *testing.T) {
 						Category: "dvi",
 						ID:       1,
 						Allowed: []string{
-							"<all>",
+							"pulse",
 						},
 						AuthKeys: []string{
 							"ValidAuthKey",
@@ -312,7 +312,7 @@ func Test_controlImport_Validate(t *testing.T) {
 						Category: "dvi",
 						ID:       1,
 						Allowed: []string{
-							"<all>",
+							"pulse",
 						},
 						AuthKeys: []string{
 							"InvalidAuthKey",

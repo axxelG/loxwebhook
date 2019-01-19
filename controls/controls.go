@@ -51,7 +51,6 @@ func (c *Control) validateAllowedCommandsDvi() ControlError {
 	for _, command := range c.Allowed {
 		switch strings.ToLower(command) {
 		case
-			"<all>",
 			"0",
 			"1",
 			"on",
@@ -151,7 +150,7 @@ func importFile(impCtl *controlImport, fn string) error {
 	}
 	err = toml.Unmarshal(fc, impCtl)
 	if err != nil {
-		err = errors.Wrap(err, "Error unmarschaling toml data")
+		err = errors.Wrap(err, "Error unmarshal toml data")
 		return err
 	}
 	return err
