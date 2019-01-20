@@ -27,7 +27,7 @@ archive:
   files:
     - LICENSE
 nfpm:
-  name_template: '{{ .ProjectName }}_{{ .Arch }}'
+  name_template: '{{ .ProjectName }}_{{ .Version }}-1_{{ .Arch }}'
   homepage:  https://github.com/axxelG/loxwebhook
   description: Make selected Loxone inputs and outputs securely available on the internet
   maintainer: Axel Gluth <mail@axelgluth.de>

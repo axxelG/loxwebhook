@@ -5,3 +5,4 @@ controls.d/controls.toml
 cache/
 bin/
 dist/
+set_deploy_env.ps1
