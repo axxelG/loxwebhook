@@ -7,6 +7,7 @@ You can find everything you need for a quick start on the projects github page: 
 ## Documentation
 
 - [Security Q & A](security_qa.md)
+- [Install](install.md)
 - [Config](config.md)
 - [Request](request.md)
 - [Controls files](controls_files.md)

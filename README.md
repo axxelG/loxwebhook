@@ -2,27 +2,32 @@
 
 Make selected Loxone virtual inputs securely available to any service that can send http requests.
 
-## Features
+![Show usage in an animated gif](/readme_images/loxwebhook_example.gif)
+
+## Key features
 
 - HTTPS encryption (LetsEncrypt)
 - AuthKey authorization
 
 ## Use case
 
-The Loxone Miniserver is able to accept http requests and many services are able to send them. This would be a nice, flexible and de facto standard way to connect different services to the Miniserver. Currently the Loxone Miniserver supports two connection methods:
+Many services that you might want to integrate with your Loxone system are able to send HTTP requests. The Loxone Miniserver is able to accept HTTP requests but you cannot use it for most services because you need to use a complex encryption method that no service I know supports (except services provided by Loxone) or you need to use an unsafe connection method. Loxone is working on implementing a more standard authentication method ([JSON Web Tokens](https://jwt.io/)) but even if JWT are implemented, I doubt that this will be supported by many services.
 
 | Connection method    | Usability  |
 |----------------------|------------|
 | Unencrypted with [Basic Auth](https://en.wikipedia.org/wiki/Basic_access_authentication) | Because Basic Auth does not provide confidentiality it is not secure to use it on the public internet |
 | Encrypted with custom encryption | No service I know supports it. |
+| [JSON Web Tokens](https://jwt.io/) | Not yet fully implemented / not supported by many services |
 
 Loxwebhook runs on a separate server (a very low level device like a Raspberry Pi is more than sufficient) to offload the http encryption, protect the Miniserver against DOS attacks (rate limit the requests) and adds an authentication layer based on authKeys to authorize request.
 
 ## State of development
 
-Most probably Loxwebhook is used only by me or maybe a few others. Feel free to try it out.
+Loxwebhook is stable and works for me since end of 2018 without problems.
 
-There are no known bugs. Create a github issue if you find something not working as expected.
+I use it to connect [IFTTT](https://ifttt.com/) and Loxone. So I am very certain I will actively maintain Loxwebhook as long as Loxone does not offer a build in IFTTT integration.
+
+If you find something that is not working like expected, don't hesitate to create a github issue.
 
 ## Data flow example setup
 
@@ -39,6 +44,8 @@ There are no known bugs. Create a github issue if you find something not working
 A server with [supported operating systems](https://axxelg.github.io/loxwebhook/supported_os.html) on your local network reachable on port 443 from the public internet with working DNS resolution. If you use port forwarding on your router, you can use a different port on the server as long as the public port on the router is 443.
 
 ### Install
+
+If you want to install Loxwebhook on a Raspberry Pi you can use [this step by step guide](/docs/walkthrough_raspberry_pi.md) otherwise the following steps will give you an idea what you need to do.
 
 1. Download the installation file suitable for your operating system from the [loxwebhook release page](https://github.com/axxelG/loxwebhook/releases/latest)
 
@@ -60,6 +67,5 @@ See [loxwebhook documentation site](https://axxelg.github.io/loxwebhook/) for mo
 - [x] Provide binaries for x86 Linux
 - [x] Provide binaries for Windows
 - [x] Provide .deb packages for Raspian
-- [ ] Run as Windows service
-- [ ] Support other inputs
+- [ ] Support other controls
 - [ ] Encrypt Miniserver Communication and get rid of basic auth even for internal traffic
