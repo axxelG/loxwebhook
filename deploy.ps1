@@ -2,11 +2,13 @@ param(
     [int]$DebPackageVersion = 1
 )
 
+#
+# Helper functions
+#
 function ConvertFrom-SecureStringPlain {
     param(
         [Parameter(ValueFromPipeline=$true,Mandatory=$true,Position=0)]
-        [System.Security.SecureString]
-        $sstr
+        [System.Security.SecureString]$sstr
     )
     $marshal = [System.Runtime.InteropServices.Marshal]
     $ptr = $marshal::SecureStringToBSTR( $sstr )
@@ -15,6 +17,21 @@ function ConvertFrom-SecureStringPlain {
     $str
 }
 
+function ConvertTo-DebianArch {
+    param(
+        [Parameter(ValueFromPipeline=$true,Mandatory=$true,Position=0)]
+        [String]$releaserArch
+    )
+    switch ($releaserArch) {
+        "armv7" { return "armhf" }
+        "armv6" { return "armel" }
+        Default {$releaserArch}
+    }
+}
+
+#
+# A FileObject holds all information needed to publish an installation package
+#
 function New-FileObject {
     [cmdletBinding()]
     param(
@@ -31,6 +48,7 @@ function New-FileObject {
     }
 }
 
+# "Methods" for FileObject
 function Get-SourceFilename{
     param(
         [PSCustomObject]$FileObject
@@ -55,19 +73,25 @@ function Get-URI{
                  "$(Get-TargetFilename($FileObject))"+
                  ";deb_distribution=stretch"+
                  ";deb_component=main"+
-                 ";deb_architecture=$($FileObject.arch)"+
+                 ";deb_architecture=$(ConvertTo-DebianArch($FileObject.arch))"+
                  ";publish=1"
 }
 
+#
+# Deployment process
+#
+
+# Collect build information
 & .\set_deploy_env.ps1
-$files = @()
 $branch = &git rev-parse --abbrev-ref HEAD
+# Build packages get FileObjecs
+$files = @()
 switch ($branch) {
     "master" {
         $debRepo = "loxwebhook_deb"
         $version = (&git describe --tags --abbrev=0).substring(1)
         $proc_goreleaser = Start-Process -FilePath 'goreleaser.exe' -ArgumentList "--rm-dist" -NoNewWindow -Wait -ErrorAction Stop -PassThru
-        $files += ((New-FileObject -repo $debRepo -version $version -packageVersion $DebPackageVersion -arch "arm"))
+        $files += ((New-FileObject -repo $debRepo -version $version -packageVersion $DebPackageVersion -arch "armv7"))
         $files += ((New-FileObject -repo $debRepo -version $version -packageVersion $DebPackageVersion -arch "amd64"))
     }
     "dev" {
@@ -75,7 +99,7 @@ switch ($branch) {
         $currentCommit = &git rev-parse --short HEAD
         $version = (&git describe --tags --abbrev=0).substring(1) + ".$currentCommit"
         $proc_goreleaser = Start-Process -FilePath 'goreleaser.exe' -ArgumentList "--rm-dist", "--snapshot" -NoNewWindow -Wait -ErrorAction Stop -PassThru
-        $files += ((New-FileObject -repo $debRepo -version $version -packageVersion $DebPackageVersion -arch "arm"))
+        $files += ((New-FileObject -repo $debRepo -version $version -packageVersion $DebPackageVersion -arch "armv7"))
         $files += ((New-FileObject -repo $debRepo -version $version -packageVersion $DebPackageVersion -arch "amd64"))
     }
     default {
@@ -85,15 +109,13 @@ switch ($branch) {
 if ($proc_goreleaser.ExitCode -gt 0) {
     Exit $?
 }
-
+# Publish packages on Bintray
 $pw = ConvertTo-SecureString -String $env:BINTRAY_API_KEY -AsPlainText -Force -ErrorAction Stop
 $user = $env:BINTRAY_USERNAME
 $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $user, $pw -ErrorAction Stop
 $gpg_key_pw = Read-Host -Prompt 'Password for gpg signing key' -AsSecureString
-
 $headers = @{"X-GPG-PASSPHRASE" = ConvertFrom-SecureStringPlain($gpg_key_pw)}
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-
 foreach ($f in $files) {
     if ($f.packageVersion -ne 1) {
         Rename-Item -Path "./dist/$(Get-SourceFilename -FileObject $f)" -NewName (Get-TargetFilename -FileObject $f)
