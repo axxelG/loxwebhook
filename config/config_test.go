@@ -48,7 +48,7 @@ func TestNewConfig(t *testing.T) {
 		Version:            testingVersionNumber,
 		ConfigFile:         "",
 		PublicURI:          "",
-		ListenPort:         80,
+		ListenPort:         4443,
 		MiniserverURL:      new(url.URL),
 		MiniserverUser:     "admin",
 		MiniserverPassword: "admin",

@@ -212,7 +212,7 @@ func newDefaultConfig() *basicTypeConfig {
 	cfg.LogFileHTTPError = ""
 	cfg.LogFileHTTPAccess = ""
 	cfg.ControlsFiles = "./controls.d"
-	cfg.ListenPort = 80
+	cfg.ListenPort = 4443
 	cfg.PublicURI = ""
 	cfg.LetsEncryptCache = "./cache/letsencrypt"
 	cfg.MiniserverURL = ""
@@ -344,7 +344,7 @@ func readConfigFile(filename string) (name string, f []byte, err error) {
 		if err == nil {
 			name = defaultConfigFile
 		}
-		// Ignore errors because we might get all nedded parameters
+		// Ignore errors because we might get all needed parameters
 		// from flags and/or environment variables
 		err = nil
 		return
@@ -368,7 +368,7 @@ func newFileConfig(filename string) (*basicTypeConfig, string, error) {
 	}
 	err = toml.Unmarshal(f, cfg)
 	if err != nil {
-		return cfg, "", errors.Wrap(err, "Error unmarschaling toml data from "+filename)
+		return cfg, "", errors.Wrap(err, "Error unmarshal toml data from "+filename)
 	}
 
 	return cfg, fn, nil
