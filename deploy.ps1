@@ -14,7 +14,7 @@ function ConvertFrom-SecureStringPlain {
     $ptr = $marshal::SecureStringToBSTR( $sstr )
     $str = $marshal::PtrToStringBSTR( $ptr )
     $marshal::ZeroFreeBSTR( $ptr )
-    $str
+    return $str
 }
 
 function ConvertTo-DebianArch {
@@ -53,14 +53,14 @@ function Get-SourceFilename{
     param(
         [PSCustomObject]$FileObject
     )
-    return "loxwebhook_v$($FileObject.version)-1_$($FileObject.arch).deb"
+    return "loxwebhook_$($FileObject.version)-1_$($FileObject.arch).deb"
 }
 
 function Get-TargetFilename{
     param(
         [PSCustomObject]$FileObject
     )
-    return "loxwebhook_v$($FileObject.version)-$($FileObject.packageVersion)_$($FileObject.arch).deb"
+    return "loxwebhook_$($FileObject.version)-$($FileObject.packageVersion)_$($FileObject.arch).deb"
 }
 
 function Get-URI{
@@ -84,12 +84,12 @@ function Get-URI{
 # Collect build information
 & .\set_deploy_env.ps1
 $branch = &git rev-parse --abbrev-ref HEAD
+$version = (&git describe --tags --abbrev=0).substring(1)
 # Build packages get FileObjecs
 $files = @()
 switch ($branch) {
     "master" {
         $debRepo = "loxwebhook_deb"
-        $version = (&git describe --tags --abbrev=0).substring(1)
         $proc_goreleaser = Start-Process -FilePath 'goreleaser.exe' -ArgumentList "--rm-dist" -NoNewWindow -Wait -ErrorAction Stop -PassThru
         $files += ((New-FileObject -repo $debRepo -version $version -packageVersion $DebPackageVersion -arch "armv7"))
         $files += ((New-FileObject -repo $debRepo -version $version -packageVersion $DebPackageVersion -arch "amd64"))
@@ -97,7 +97,7 @@ switch ($branch) {
     "dev" {
         $debRepo = "loxwebhook_deb_dev"
         $currentCommit = &git rev-parse --short HEAD
-        $version = (&git describe --tags --abbrev=0).substring(1) + ".$currentCommit"
+        $version = $version + ".$currentCommit"
         $proc_goreleaser = Start-Process -FilePath 'goreleaser.exe' -ArgumentList "--rm-dist", "--snapshot" -NoNewWindow -Wait -ErrorAction Stop -PassThru
         $files += ((New-FileObject -repo $debRepo -version $version -packageVersion $DebPackageVersion -arch "armv7"))
         $files += ((New-FileObject -repo $debRepo -version $version -packageVersion $DebPackageVersion -arch "amd64"))
@@ -124,14 +124,13 @@ foreach ($f in $files) {
     try {
         Invoke-RestMethod -Uri (Get-URI -FileObject $f) -Method Put -InFile "./dist/$(Get-TargetFilename -FileObject $f)" -Headers $headers -Credential $cred
     }
-    catch {
-        $response = $_.Exception.Response.GetResponseStream()
+    catch [System.Net.WebException] {
+        $err = $_
+        $response = $err.Exception.Response.GetResponseStream()
         $reader = New-Object System.IO.StreamReader($response)
         $reader.BaseStream.Position = 0
         $reader.DiscardBufferedData()
         $responseBody = $reader.ReadToEnd()
-        Write-Error $_
-        Write-Output $responseBody
-        Exit(1)
+        Write-Error ($err.ToString() + " Body: " + $responseBody) -ErrorAction Stop
     }
 }
